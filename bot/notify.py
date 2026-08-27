@@ -65,6 +65,24 @@ async def notify_user_cancelled(bot: Bot, order: Order) -> None:
         logging.getLogger(__name__).exception("Ошибка уведомления операторов об отмене клиентом")
 
 
+async def notify_ai_escalation(bot: Bot, from_user, text: str) -> None:
+    """ИИ-ассистент эскалировал клиента: операторам — короткая пометка."""
+    from config.settings import get_settings
+
+    chat_id = get_settings().operator_chat_id
+    if not chat_id:
+        return
+    name = from_user.full_name or from_user.first_name or str(from_user.id)
+    try:
+        await bot.send_message(
+            chat_id, f"🤖 <b>Клиент просит человека</b> ({name}):\n\n{text[:300]}"
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Ошибка уведомления об эскалации")
+
+
 async def update_order_card(
     bot: Bot,
     session: AsyncSession,
