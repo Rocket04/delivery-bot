@@ -86,10 +86,5 @@ async def cb_cart_clear(callback: CallbackQuery, session: AsyncSession) -> None:
     await callback.answer()
     user_id = await db_user_id(session, callback.from_user.id)
     await clear_cart(session, user_id)
+    await session.commit()
     await edit_or_answer(callback.message, RU["cart_empty"], cart_empty_kb())
-
-
-@router.callback_query(F.data == "cart:checkout")
-async def cb_cart_checkout(callback: CallbackQuery, session: AsyncSession) -> None:
-    await callback.answer()
-    await callback.message.answer(RU["checkout_soon"])

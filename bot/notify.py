@@ -1,0 +1,56 @@
+"""Отправка заказов в группу операторов и обновление карточки заказа."""
+
+from aiogram import Bot
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.keyboards.operator import operator_kb
+from core.constants import ORDER_STATUS_LABELS
+from core.ordering import order_summary_text
+from data.models import Order, OrderItem
+
+
+async def get_order_items(session: AsyncSession, order_id: int) -> list[OrderItem]:
+    return list(
+        await session.scalars(
+            select(OrderItem).where(OrderItem.order_id == order_id).order_by(OrderItem.id)
+        )
+    )
+
+
+def order_card_text(order: Order, items: list[OrderItem]) -> str:
+    status = ORDER_STATUS_LABELS.get(order.status, order.status)
+    return (
+        f"🧾 <b>Заказ №{order.number}</b>\n"
+        f"Статус: {status}\n\n"
+        f"{order_summary_text(order, items)}"
+    )
+
+
+async def send_order_to_operators(bot: Bot, session: AsyncSession, order: Order) -> None:
+    """Шлёт новую карточку заказа в группу операторов."""
+    from config.settings import get_settings
+
+    chat_id = get_settings().operator_chat_id
+    if not chat_id:
+        return  # группа ещё не настроена — заказ остаётся только в БД
+    items = await get_order_items(session, order.id)
+    try:
+        await bot.send_message(chat_id, order_card_text(order, items), reply_markup=operator_kb(order))
+    except Exception:
+        # Группа не найдена/бот не в группе — не роняем оформление клиента
+        import logging
+
+        logging.getLogger(__name__).exception("Ошибка отправки заказа в группу операторов")
+
+
+async def update_order_card(
+    bot: Bot,
+    session: AsyncSession,
+    order: Order,
+    chat_id: int,
+    message_id: int,
+) -> None:
+    """Перерисовывает карточку заказа в группе после смены статуса."""
+    items = await get_order_items(session, order.id)
+    await bot.edit_message_text(order_card_text(order, items), chat_id=chat_id, message_id=message_id, reply_markup=operator_kb(order))

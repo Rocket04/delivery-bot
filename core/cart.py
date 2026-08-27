@@ -83,5 +83,5 @@ async def get_cart_view(session: AsyncSession, user_id: int) -> CartView:
 
 
 async def clear_cart(session: AsyncSession, user_id: int) -> None:
+    """Очищает корзину БЕЗ commit — вызывающий решает, когда зафиксировать."""
     await session.execute(delete(CartItem).where(CartItem.user_id == user_id))
-    await session.commit()
