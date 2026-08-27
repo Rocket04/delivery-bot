@@ -46,17 +46,33 @@ def _product_card_text(product: Product, qty: int) -> str:
 
 
 async def show_product_card(message: Message, product: Product, qty: int, *, edit: bool) -> None:
-    """Карточка товара: фото (если есть) + текст + кнопки [- qty +]."""
+    """Карточка товара: фото (если есть) + текст + кнопки [- qty +].
+
+    Если photo_file_id недействителен (чужой бот/файл удалён) — Telegram отдаёт
+    BadRequest, и карточка показывается текстом, а не «Ошибкой бота».
+    """
     kb = product_card_kb(product.id, qty, product.category_id)
     text = _product_card_text(product, qty)
     if product.photo_file_id:
-        if edit:
-            try:
-                await message.edit_caption(caption=text, reply_markup=kb)
-                return
-            except TelegramBadRequest:
-                pass
-        await message.answer_photo(product.photo_file_id, caption=text, reply_markup=kb)
+        try:
+            if edit:
+                try:
+                    await message.edit_caption(caption=text, reply_markup=kb)
+                    return
+                except TelegramBadRequest:
+                    pass
+            await message.answer_photo(product.photo_file_id, caption=text, reply_markup=kb)
+        except TelegramBadRequest as exc:
+            if "wrong file identifier" not in str(exc).lower() and "not found" not in str(exc).lower():
+                raise
+            # file_id устарел/принадлежит другому боту — фолбэк на текстовую карточку
+            if edit:
+                try:
+                    await message.edit_text(text, reply_markup=kb)
+                    return
+                except TelegramBadRequest:
+                    pass
+            await message.answer(text, reply_markup=kb)
     else:
         if edit:
             try:
