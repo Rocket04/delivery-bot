@@ -159,11 +159,27 @@ gunzip -c backups/delivery_<дата>.sql.gz | docker compose exec -T db psql -U
 
 ## 8. Обновление бота после правок
 
+Одной командой (git pull + пересборка + рестарт):
+
+```bash
+bash /opt/delivery-bot/scripts/update.sh
+```
+
+Или вручную те же шаги:
+
 ```bash
 cd /opt/delivery-bot
-git pull                      # или заново scp изменённых файлов
+git pull
 docker compose up -d --build
 ```
+
+**Скорость:** зависимости (`requirements.txt`) лежат в отдельном Docker-слое и
+кешируются — при правке кода пересобираются только файлы проекта (обычно секунды,
+без переустановки пакетов). Если менялись зависимости или Dockerfile — пересборка
+полная, но это редко.
+
+**Важно:** `git pull` НЕ трогает crontab (он живёт в системе, а не в репозитории)
+и `.env` (в .gitignore) — бэкапы и настройки не слетят.
 
 ---
 
