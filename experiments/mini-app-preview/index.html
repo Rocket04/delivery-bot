@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Food Plov — Mini App (превью)</title>
+<style>
+  :root {
+    --bg: #f4f4f5; --card: #ffffff; --text: #18181b; --muted: #71717a;
+    --accent: #34c759; --accent-dark: #28a745; --danger: #ff3b30; --border: #e4e4e7;
+    --bar: #ffffff; --shadow: 0 2px 12px rgba(0,0,0,.08); --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f0f12; --card: #1c1c22; --text: #fafafa; --muted: #a1a1aa;
+      --accent: #30d158; --accent-dark: #248a3d; --danger: #ff453a; --border: #2c2c33; --bar: #1c1c22;
+      --shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg); color: var(--text); padding-bottom: 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .banner {
+    background: linear-gradient(90deg, #f59f00, #e8590c); color: #fff;
+    font-size: 12px; text-align: center; padding: 6px 12px;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10; background: var(--bar);
+    border-bottom: 1px solid var(--border); padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  header .logo { width: 40px; height: 40px; border-radius: 10px; background: #e8590c; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  header h1 { font-size: 17px; font-weight: 700; }
+  header p { font-size: 12px; color: var(--muted); }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 7px 14px; font-size: 13px; cursor: pointer; color: var(--text);
+  }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  main { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .cat-title { font-size: 14px; font-weight: 700; color: var(--muted); margin: 8px 2px 2px; }
+  .item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; display: flex; gap: 12px; align-items: center;
+  }
+  .item .emoji { width: 52px; height: 52px; border-radius: 12px; background: rgba(232,89,12,.12); display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 52px; }
+  .item .info { flex: 1; min-width: 0; }
+  .item .info .name { font-size: 14.5px; font-weight: 600; }
+  .item .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .item .info .price { font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .item .qty { display: flex; align-items: center; gap: 8px; }
+  .qty button {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 16px; cursor: pointer;
+  }
+  .qty button:active { transform: scale(.92); }
+  .qty button.minus:disabled { opacity: .3; }
+  .qty .n { min-width: 20px; text-align: center; font-weight: 700; font-size: 14px; }
+  .unavailable { opacity: .55; }
+  .unavailable .tag { display:inline-block; font-size: 10px; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
+  #bar {
+    position: fixed; left: 0; right: 0; bottom: 0; background: var(--bar);
+    border-top: 1px solid var(--border); padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow);
+  }
+  #bar .sum { flex: 1; }
+  #bar .sum .lab { font-size: 11px; color: var(--muted); }
+  #bar .sum .val { font-size: 16px; font-weight: 800; }
+  #bar .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 12px;
+    padding: 12px 18px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  #bar .btn:disabled { background: var(--accent-dark); opacity: .45; cursor: default; }
+  #bar .btn.warn { background: var(--danger); }
+  /* sheet */
+  #sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 20;
+    display: none; pointer-events: none;
+  }
+  #sheet.open { display: block; pointer-events: auto; }
+  #sheet .overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+  #sheet .panel {
+    position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg);
+    border-radius: 20px 20px 0 0; max-height: 82vh; overflow-y: auto;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    animation: up .22s ease-out;
+  }
+  @keyframes up { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+  #sheet h2 { font-size: 17px; margin-bottom: 10px; }
+  .srow { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .srow .nm { flex: 1; }
+  .srow .pr { font-weight: 600; }
+  .srow .q { margin-left: 10px; color: var(--muted); font-size: 12px; }
+  .total { display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; padding: 12px 0 4px; }
+  .note { font-size: 12px; color: var(--muted); padding: 2px 0 10px; }
+  .note.alert { color: var(--danger); }
+  #sheet .btn { width: 100%; margin-top: 10px; padding: 15px; }
+  input, select {
+    width: 100%; background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 12px; padding: 12px; font-size: 14px; margin: 6px 0;
+  }
+  .lab { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  #ok { text-align: center; padding: 30px 0; }
+  #ok .big { font-size: 44px; }
+  #ok .t { font-weight: 800; font-size: 17px; margin: 10px 0 4px; }
+  #ok .s { font-size: 13px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="banner">🧪 UX-превью Mini App · эксперимент exp/user-cancel-reorder · данные не отправляются</div>
+  <header>
+    <div class="logo">🍚</div>
+    <div>
+      <h1>Food Plov</h1>
+      <p>Доставка еды по Павлодару · предзаказ от суток</p>
+    </div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+  <main id="list"></main>
+
+  <div id="bar">
+    <div class="sum">
+      <div class="lab" id="barLab">Корзина</div>
+      <div class="val" id="barVal">0 ₸</div>
+    </div>
+    <button class="btn" id="barBtn" disabled>Оформить</button>
+  </div>
+
+  <div id="sheet">
+    <div class="overlay" onclick="closeSheet()"></div>
+    <div class="panel" id="sheetPanel"></div>
+  </div>
+
+<script>
+const MIN = 20000, LARGE = 60000, PREPAY = 50;
+let MENU = [];        // [{id, cat, name, desc, price}]
+let CART = {};        // id -> qty
+let activeCat = null;
+
+const EMOJI = { "🍛": ["Плов","плов"], "🥟": ["Манты","мант","пельмен"], "🍢": ["Шашлык","шашлык","кебаб","куырдак"], "🥘": ["Горячие","бешпармак","сирне","дамляма","казан"], "🥗": ["Салат","салат"], "🍱": ["Комплекс","комплекс","обед"], "🍰": ["Десерт","десерт","сладк"], "🥤": ["Напитк","напитк","чай","компот"], "🍞": ["Лепёшка","лепёшк","хлеб","баурсак","татыра"] };
+function emojiFor(name, cat) {
+  for (const [e, keys] of Object.entries(EMOJI)) for (const k of keys) if ((name + " " + cat).includes(k)) return e;
+  return "🍽️";
+}
+const fmt = n => n.toLocaleString("ru-RU").replace(/\u00a0/g, " ") + " ₸";
+
+async function boot() {
+  const r = await fetch("data.json"); const j = await r.json();
+  let id = 0;
+  for (const c of (j.categories||[]).filter(c => c.is_active !== false)) {
+    for (const p of c.products||[]) {
+      MENU.push({ id: ++id, cat: c.name, name: p.name, desc: p.description || "", price: p.price, avail: p.is_available !== false });
+    }
+  }
+  const cats = [...new Set(MENU.map(m => m.cat))];
+  const chips = document.getElementById("chips");
+  const all = document.createElement("div"); all.className = "chip active"; all.textContent = "🍽 Всё меню";
+  all.onclick = () => { activeCat = null; setActive(chips); render(); };
+  chips.appendChild(all);
+  cats.forEach((c, i) => {
+    const d = document.createElement("div"); d.className = "chip" + (i === 0 ? "" : ""); d.textContent = emojiFor(c, c) + " " + c;
+    d.onclick = () => { activeCat = c; setActive(d); render(); }; chips.appendChild(d);
+  });
+  render();
+}
+function setActive(el) { document.querySelectorAll(".chip").forEach(c => c.classList.remove("active")); el.classList.add("active"); }
+
+function cartTotal() { let t = 0; for (const [id, q] of Object.entries(CART)) { const m = MENU[id-1]; if (m && m.avail) t += m.price * q; } return t; }
+function cartCount() { return Object.values(CART).reduce((a, b) => a + b, 0); }
+
+function render() {
+  const list = document.getElementById("list"); list.innerHTML = "";
+  const items = MENU.filter(m => !activeCat || m.cat === activeCat);
+  const grouped = {};
+  for (const m of items) (grouped[m.cat] = grouped[m.cat] || []).push(m);
+  for (const [cat, arr] of Object.entries(grouped)) {
+    const t = document.createElement("div"); t.className = "cat-title"; t.textContent = emojiFor(cat, cat) + " " + cat;
+    list.appendChild(t);
+    for (const m of arr) list.appendChild(itemEl(m));
+  }
+  updateBar();
+}
+function itemEl(m) {
+  const d = document.createElement("div"); d.className = "item" + (m.avail ? "" : " unavailable");
+  const q = CART[m.id] || 0;
+  d.innerHTML =
+    `<div class="emoji">${emojiFor(m.name, m.cat)}</div>` +
+    `<div class="info"><div class="name">${esc(m.name)}${m.avail ? "" : '<span class="tag">нет в наличии</span>'}</div>` +
+    `<div class="desc">${esc(m.desc)}</div><div class="price">${fmt(m.price)}</div></div>` +
+    `<div class="qty">` +
+    `<button class="minus" ${!m.avail || q === 0 ? "disabled" : ""} onclick="chg(${m.id},-1)">−</button>` +
+    `<span class="n">${q || ""}</span>` +
+    `<button class="plus" ${m.avail ? "" : "disabled"} onclick="chg(${m.id},1)">+</button></div>`;
+  return d;
+}
+const esc = s => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function chg(id, delta) {
+  const m = MENU[id-1]; if (!m || !m.avail) return;
+  const nq = (CART[id] || 0) + delta;
+  if (nq <= 0) delete CART[id]; else CART[id] = Math.min(nq, 99);
+  render();
+}
+function updateBar() {
+  const t = cartTotal(), n = cartCount();
+  const lab = document.getElementById("barLab"), val = document.getElementById("barVal"), btn = document.getElementById("barBtn");
+  if (n === 0) { lab.textContent = "Корзина"; val.textContent = "0 ₸"; btn.disabled = true; btn.textContent = "Оформить"; return; }
+  lab.textContent = `В корзине: ${n} поз.`;
+  val.textContent = fmt(t);
+  if (t < MIN) { btn.disabled = true; btn.textContent = `Ещё ${fmt(MIN - t)} до мин. заказа`; }
+  else if (t >= LARGE) { btn.disabled = false; btn.textContent = "Оформить (крупный)"; }
+  else { btn.disabled = false; btn.textContent = "Оформить"; }
+}
+function openSheet() {
+  const p = document.getElementById("sheetPanel"), s = document.getElementById("sheet");
+  if (cartCount() === 0) return;
+  let rows = "";
+  let t = 0;
+  for (const [id, q] of Object.entries(CART)) {
+    const m = MENU[id-1]; if (!m) continue;
+    t += m.price * q;
+    rows += `<div class="srow"><span class="nm">${esc(m.name)}</span><span class="q">×${q}</span><span class="pr">${fmt(m.price*q)}</span></div>`;
+  }
+  const prepay = Math.floor(t * PREPAY / 100);
+  const largeHint = t >= LARGE ? `<div class="note alert">📦 Крупный заказ (от ${fmt(LARGE)}) — примем минимум за 48 часов.</div>` : "";
+  const minWarn = t < MIN ? `<div class="note alert">Минимальный заказ — ${fmt(MIN)}, сейчас ${fmt(t)}.</div>` : "";
+  p.innerHTML =
+    `<h2>🛒 Корзина</h2>${rows}` +
+    `<div class="total"><span>Итого</span><span>${fmt(t)}</span></div>` +
+    `<div class="total" style="border:none"><span class="note" style="padding:0">Предоплата 50%</span><span class="note" style="padding:0">${fmt(prepay)}</span></div>` +
+    `${largeHint}${minWarn}` +
+    `<button class="btn" onclick="goCheckout()" ${t < MIN ? "disabled" : ""}>Перейти к оформлению</button>`;
+  s.classList.add("open");
+}
+function closeSheet() { document.getElementById("sheet").classList.remove("open"); }
+function goCheckout() {
+  const t = cartTotal();
+  const p = document.getElementById("sheetPanel");
+  p.innerHTML =
+    `<h2>🚚 Оформление</h2>` +
+    `<div class="lab">Имя</div><input id="fName" placeholder="Как тебя зовут?">` +
+    `<div class="lab">Телефон</div><input id="fPhone" placeholder="+7 700 000 00 00">` +
+    `<div class="lab">Адрес</div><input id="fAddr" placeholder="Улица, дом, квартира">` +
+    `<div class="lab">Время доставки</div><input id="fTime" type="datetime-local" value="${defaultTime()}">` +
+    `<div class="note" style="margin-top:8px">🕐 Готовим по предзаказу — минимум за сутки${t >= LARGE ? ", крупные — за 48 ч" : ""}.<br>💳 Предоплата 50% (${fmt(Math.floor(t*PREPAY/100))}) — Kaspi, после подтверждения пришлём реквизиты.</div>` +
+    `<button class="btn" onclick="submitOrder()">✅ Отправить заказ</button>`;
+}
+function defaultTime() {
+  const d = new Date(Date.now() + (t >= LARGE ? 48 : 26) * 3600e3);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function submitOrder() {
+  const t = cartTotal();
+  document.getElementById("sheetPanel").innerHTML =
+    `<div id="ok"><div class="big">✅</div><div class="t">Заказ оформлен!</div>` +
+    `<div class="s">Оператор подтвердит его и пришлёт реквизиты Kaspi на предоплату 50% — <b>${fmt(Math.floor(t*PREPAY/100))}</b>.<br><br>В реальном Mini App здесь будет переход в бот: статусы, чек, история.</div></div>`;
+}
+document.getElementById("barBtn").onclick = openSheet;
+boot();
+</script>
+</body>
+</html>
