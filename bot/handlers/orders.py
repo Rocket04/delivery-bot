@@ -11,8 +11,7 @@ from bot.handlers.catalog import db_user_id
 from bot.notify import get_order_items
 from bot.texts import RU
 from bot.utils import edit_or_answer
-from core.constants import ORDER_STATUS_LABELS
-from core.ordering import get_order, order_summary_text
+from core.ordering import ORDER_STATUS_LABELS, get_order, order_summary_text
 from data.models import Order
 
 router = Router(name="orders")

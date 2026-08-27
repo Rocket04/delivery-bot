@@ -5,8 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.keyboards.operator import operator_kb
-from core.constants import ORDER_STATUS_LABELS
-from core.ordering import order_summary_text
+from core.ordering import ORDER_STATUS_LABELS, order_summary_text
 from data.models import Order, OrderItem
 
 

@@ -15,8 +15,14 @@ from bot.keyboards.operator import operator_kb, operator_pay_kb
 from bot.notify import update_order_card
 from bot.texts import RU, fmt_price
 from config.settings import get_settings
-from core.constants import ORDER_STATUS_LABELS, PaymentStatus
-from core.ordering import OrderError, get_order, latest_awaiting_prepayment, transition
+from core.constants import PaymentStatus
+from core.ordering import (
+    ORDER_STATUS_LABELS,
+    OrderError,
+    get_order,
+    latest_awaiting_prepayment,
+    transition,
+)
 from data.models import User
 
 router = Router(name="operator")
