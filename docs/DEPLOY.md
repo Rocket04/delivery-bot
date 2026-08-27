@@ -107,6 +107,25 @@ docker compose logs -f bot          # следить за стартом
 
 ---
 
+## 5.1 Меню (обязательно после первого запуска)
+
+Миграции создают только схему — сами товары заливаются отдельно из
+`data/seed/menu.json` (99 позиций + фото, выгружено с рабочей машины):
+
+```bash
+cd /opt/delivery-bot
+docker compose exec -T bot python scripts/menu_sync.py seed --reset
+# → seed done: 10 categories, 99 products
+```
+
+После этого `/start` → «Наше меню» показывает категории.
+
+Обновление меню в будущем: на рабочей машине `python scripts/menu_sync.py export`
+(после правок в админке), закоммитить `data/seed/menu.json`, на сервере
+`git pull && docker compose exec -T bot python scripts/menu_sync.py seed --reset`.
+
+---
+
 ## 6. Автозапуск и переживание перезагрузок
 
 В `docker-compose.yml` у обоих сервисов стоит `restart: unless-stopped` — после
