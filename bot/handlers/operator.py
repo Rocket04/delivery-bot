@@ -35,6 +35,7 @@ PAID_RE = re.compile(r"^op:paid:(\d+)$")
 PREPARING_RE = re.compile(r"^op:preparing:(\d+)$")
 DELIVERING_RE = re.compile(r"^op:delivering:(\d+)$")
 DELIVERED_RE = re.compile(r"^op:delivered:(\d+)$")
+RECEIPT_REJECTED_RE = re.compile(r"^op:receipt_rejected:(\d+)$")
 PAY_METHOD_RE = re.compile(r"^op:(kaspi_transfer|kaspi_link|kaspi_remote):(\d+)$")
 _PRICE_RE = re.compile(r"^\d{1,7}$")
 
@@ -166,19 +167,59 @@ async def _status_action(callback: CallbackQuery, session: AsyncSession, status:
         await transition(session, order, status, actor="operator")
     except OrderError:
         return
-    await _send_user_status(
-        callback.bot, session, order,
-        RU["user_status"].format(number=order.number, status=ORDER_STATUS_LABELS[status]),
-    )
+    if status == "confirmed":
+        text = RU["user_status_confirmed"].format(
+            number=order.number,
+            time=order.scheduled_for.strftime("%d.%m в %H:%M"),
+        )
+    else:
+        text = RU["user_status"].format(
+            number=order.number,
+            status=ORDER_STATUS_LABELS[status],
+        )
+    await _send_user_status(callback.bot, session, order, text)
     await update_order_card(callback.bot, session, order, callback.message.chat.id, callback.message.message_id)
+    return order
+
+
+def _paid_kb(order_id: int) -> InlineKeyboardMarkup:
+    """Кнопки на сообщении с чеком: подтвердить или отклонить."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Оплата получена", callback_data=f"op:paid:{order_id}")],
+            [InlineKeyboardButton(text=RU["op_receipt_reject_btn"], callback_data=f"op:receipt_rejected:{order_id}")],
+        ]
+    )
 
 
 @router.callback_query(F.data.regexp(PAID_RE.pattern))
 async def op_paid(callback: CallbackQuery, session: AsyncSession) -> None:
     if not await _op_check(callback):
         return
-    await _status_action(callback, session, "confirmed")
-    await callback.message.answer(RU["op_paid_confirm"].format(number=callback.data.split(":")[2]))
+    order = await _status_action(callback, session, "confirmed")
+    # снимаем кнопки с сообщения-чека, чтобы не было двойного клика
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    if order is not None:
+        await callback.message.answer(RU["op_paid_confirm"].format(number=order.number))
+
+
+@router.callback_query(F.data.regexp(RECEIPT_REJECTED_RE.pattern))
+async def op_receipt_rejected(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Оператор не принял чек (фейк/не та сумма) — заказ остаётся в статусе ожидания."""
+    if not await _op_check(callback):
+        return
+    order = await get_order(session, int(RECEIPT_REJECTED_RE.match(callback.data).group(1)))
+    if order is None:
+        return
+    try:
+        await callback.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await _send_user_status(callback.bot, session, order, RU["user_receipt_rejected"])
+    await callback.message.answer(RU["op_receipt_rejected_ok"].format(number=order.number))
 
 
 @router.callback_query(F.data.regexp(PREPARING_RE.pattern))
@@ -252,17 +293,12 @@ async def on_receipt_photo(message: Message, session: AsyncSession) -> None:
         return
     user = await session.get(User, order.user_id)
     name = user.first_name if user and user.first_name else order.contact_name
-    paid_kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="💳 Оплата получена", callback_data=f"op:paid:{order.id}")]
-        ]
-    )
     try:
         await message.bot.send_photo(
             settings.operator_chat_id,
             message.photo[-1].file_id,
             caption=RU["user_receipt_forwarded"].format(number=order.number, name=name),
-            reply_markup=paid_kb,
+            reply_markup=_paid_kb(order.id),
         )
     except Exception:
         logger.exception("Не удалось переслать чек в группу операторов")

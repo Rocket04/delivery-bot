@@ -100,8 +100,16 @@ RU = {
         "💸 Реквизиты: {details}"
     ),
     "user_receipt_sent": "📎 Чек получен! Ждём подтверждения оператора (~ несколько минут).",
+    "user_receipt_rejected": "📵 Чек отклонён оператором. Пришли корректный чек (скрин Kaspi) или напиши нам — разберёмся.",
     "user_receipt_forwarded": "🧾 Чек по заказу №{number} от {name}",
     "user_status": "📦 <b>Заказ №{number}</b>: {status}",
+    "user_status_confirmed": (
+        "✅ <b>Заказ №{number} подтверждён!</b>\n\n"
+        "Предоплата получена — начинаем готовить к {time}. "
+        "Если появятся вопросы, напиши нам."
+    ),
+    "op_receipt_reject_btn": "❌ Чек отклонён",
+    "op_receipt_rejected_ok": "Чек по заказу №{number} отклонён. Клиенту отправлено уведомление.",
     "user_cancelled": "❌ <b>Заказ №{number} отменён.</b>\n\nПричина: {reason}",
     "op_paid_confirm": "💳 Оплата по заказу №{number} подтверждена.",
     "op_status_changed": "✅ Заказ №{number}: {status}",
