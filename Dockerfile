@@ -8,6 +8,7 @@ COPY bot/ bot/
 COPY core/ core/
 COPY data/ data/
 COPY config/ config/
+COPY scripts/ scripts/
 COPY alembic.ini ./
 
 RUN pip install --no-cache-dir .
