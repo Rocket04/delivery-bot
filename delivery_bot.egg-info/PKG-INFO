@@ -1,3 +1,19 @@
+Metadata-Version: 2.4
+Name: delivery-bot
+Version: 0.1.0
+Summary: Telegram-бот приёма заказов на доставку еды (FoodPlovPavlodar)
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: aiogram<4.0,>=3.13
+Requires-Dist: sqlalchemy[asyncio]<3.0,>=2.0.30
+Requires-Dist: asyncpg>=0.29
+Requires-Dist: alembic>=1.13
+Requires-Dist: pydantic-settings>=2.4
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.24; extra == "dev"
+Requires-Dist: aiosqlite>=0.20; extra == "dev"
+
 # DeliveryBot
 
 Telegram-бот приёма заказов на доставку еды. Бизнес: **Food Plov / FoodPlovCenter**, Павлодар (плов, манты, пельмени, шашлыки, комплексные обеды).
@@ -11,8 +27,9 @@ Telegram-бот приёма заказов на доставку еды. Биз
 
 **Каждый запуск:**
 2. Если служба PostgreSQL остановлена — запусти её (сервисы → `postgresql-x64-18` или админский `Start-Service postgresql-x64-18`).
-3. `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` — установить зависимости.
-4. `powershell -ExecutionPolicy Bypass -File scripts\run.ps1` — миграции + запуск бота (long polling).
+3. `uv venv .venv && uv pip install --python .venv\Scripts\python.exe -e ".[dev]"` — окружение и зависимости.
+4. `.\.venv\Scripts\python.exe -m alembic upgrade head` — применить миграции.
+5. `.\.venv\Scripts\python.exe -m bot` — запустить бота (long polling).
 
 Docker (`docker compose`) понадобится только на проде (VPS, стадия 6).
 
