@@ -40,9 +40,10 @@ class Settings(BaseSettings):
     delivery_end_hour: int = 23  # env: DELIVERY_END_HOUR — до какого часа (включительно)
 
     # --- ИИ-ассистент (эксперимент exp/ai-assistant) ---
-    llm_provider: str = "mock"  # env: LLM_PROVIDER — mock | deepseek (mock — без ключа, для тестов/демо)
-    llm_api_key: str = ""  # env: LLM_API_KEY — ключ DeepSeek (в репозиторий НЕ писать)
-    llm_model: str = "deepseek-chat"  # env: LLM_MODEL
+    llm_provider: str = "mock"  # env: LLM_PROVIDER — mock | deepseek | opencode (go-гейтвей)
+    llm_api_key: str = ""  # env: LLM_API_KEY — ключ провайдера (в репозиторий НЕ писать)
+    llm_model: str = "deepseek-v4-flash"  # env: LLM_MODEL (у opencode-go: deepseek-v4-flash/pro/vision-exp)
+    llm_base_url: str = ""  # env: LLM_BASE_URL — пусто = дефолт провайдера (deepseek / opencode-go)
     llm_max_tokens: int = 240  # env: LLM_MAX_TOKENS — лимит ответа (экономия + защита)
 
     @property

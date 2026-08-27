@@ -163,7 +163,16 @@ async def test_fallback_when_llm_down(db_session):
 async def test_provider_factory():
     assert get_provider("mock", "", "m").name == "mock"
     with pytest.raises(LLMError, match="LLM_API_KEY"):
-        get_provider("deepseek", "", "deepseek-chat")
+        get_provider("deepseek", "", "deepseek-v4-flash")
+    with pytest.raises(LLMError, match="LLM_API_KEY"):
+        get_provider("opencode", "", "deepseek-v4-flash")
+    # opencode-гейтвей: открытый совместимый провайдер с дефолтным URL
+    from integrations.llm.openai_compat import OpenAICompatibleProvider
+
+    p = OpenAICompatibleProvider(api_key="k", model="deepseek-v4-flash", base_url="")
+    assert p.base_url == "https://api.deepseek.com"
+    p2 = OpenAICompatibleProvider(api_key="k", model="deepseek-v4-flash", base_url="https://opencode.ai/zen/go/v1")
+    assert p2.base_url == "https://opencode.ai/zen/go/v1"
 
 
 async def test_last_order_brief(db_session):

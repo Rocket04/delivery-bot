@@ -1,7 +1,8 @@
 """Провайдеры LLM (эксперимент exp/ai-assistant).
 
-Тонкая абстракция: бот не знает, какой провайдер стоит — mock (без сети) или
-DeepSeek (OpenAI-совместимый API). Фабрика get_provider кеширует инстанс.
+Тонкая абстракция: бот не знает, какой провайдер стоит — mock (без сети),
+DeepSeek напрямую или гейтвей OpenCode Go (OpenAI-совместимый API).
+Фабрика get_provider кеширует инстанс.
 """
 
 from __future__ import annotations
@@ -25,12 +26,18 @@ class LLMProvider(ABC):
 
 
 @lru_cache(maxsize=8)
-def get_provider(kind: str, api_key: str = "", model: str = "deepseek-chat") -> LLMProvider:
-    """Фабрика провайдеров по настройкам (env: LLM_PROVIDER/LLM_API_KEY/LLM_MODEL)."""
-    if kind == "deepseek":
-        from integrations.llm.deepseek import DeepSeekProvider
+def get_provider(
+    kind: str, api_key: str = "", model: str = "deepseek-v4-flash", base_url: str = ""
+) -> LLMProvider:
+    """Фабрика провайдеров по настройкам (env: LLM_PROVIDER/LLM_API_KEY/LLM_MODEL/LLM_BASE_URL)."""
+    if kind in ("deepseek", "opencode"):
+        from integrations.llm.openai_compat import DEFAULT_BASE_URLS, OpenAICompatibleProvider
 
-        return DeepSeekProvider(api_key=api_key, model=model)
+        return OpenAICompatibleProvider(
+            api_key=api_key,
+            model=model,
+            base_url=base_url or DEFAULT_BASE_URLS.get(kind),
+        )
     from integrations.llm.mock import MockProvider
 
     return MockProvider()
