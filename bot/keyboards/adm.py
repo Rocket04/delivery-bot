@@ -17,8 +17,8 @@ def adm_help_kb() -> InlineKeyboardMarkup:
 
 def adm_cats_kb(categories) -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
-    for c in categories:
-        label = ("🚫 " if not c.is_active else "") + c.name
+    for i, c in enumerate(categories, 1):
+        label = f"{i}. " + ("🚫 " if not c.is_active else "") + c.name
         b.row(InlineKeyboardButton(text=label, callback_data=f"adm:cat:{c.id}"))
     b.row(InlineKeyboardButton(text="➕ Новая категория", callback_data="adm:cat_new"))
     b.row(InlineKeyboardButton(text="⬅️ В админку", callback_data="adm:main"))
@@ -44,8 +44,8 @@ def adm_cat_kb(category_id: int, can_delete: bool) -> InlineKeyboardMarkup:
 
 def adm_products_kb(products, category_id: int) -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
-    for p in products:
-        label = ("🚫 " if not p.is_available else "") + f"{p.name}"
+    for i, p in enumerate(products, 1):
+        label = f"{i}. " + ("🚫 " if not p.is_available else "") + p.name
         b.row(InlineKeyboardButton(text=label, callback_data=f"adm:prod:{p.id}"))
     b.row(InlineKeyboardButton(text="➕ Новый товар", callback_data=f"adm:prod_new:{category_id}"))
     b.row(InlineKeyboardButton(text="⬅️ Категория", callback_data=f"adm:cat:{category_id}"))

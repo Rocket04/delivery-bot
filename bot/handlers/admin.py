@@ -214,16 +214,28 @@ async def adm_cat_toggle(callback: CallbackQuery, session: AsyncSession) -> None
 async def adm_cat_up(callback: CallbackQuery, session: AsyncSession) -> None:
     if not await _adm_check(callback):
         return
-    await callback.answer()
+    await callback.answer("Порядок обновлён")
     await admin_srv.move_category(session, int(CAT_UP_RE.match(callback.data).group(1)), -1)
+    await _show_cats_edit(callback.message, session)
 
 
 @router.callback_query(F.data.regexp(CAT_DOWN_RE.pattern))
 async def adm_cat_down(callback: CallbackQuery, session: AsyncSession) -> None:
     if not await _adm_check(callback):
         return
-    await callback.answer()
+    await callback.answer("Порядок обновлён")
     await admin_srv.move_category(session, int(CAT_DOWN_RE.match(callback.data).group(1)), 1)
+    await _show_cats_edit(callback.message, session)
+
+
+async def _show_cats_edit(message: Message, session: AsyncSession) -> None:
+    """Показывает обновлённый список категорий вместо текущего сообщения."""
+    from bot.utils import edit_or_answer
+
+    cats = list(
+        await session.scalars(select(Category).order_by(Category.sort_order, Category.id))
+    )
+    await edit_or_answer(message, RU["admin_cats_title"], adm_cats_kb(cats))
 
 
 @router.callback_query(F.data.regexp(CAT_DEL_RE.pattern))
@@ -482,16 +494,43 @@ async def adm_prod_toggle(callback: CallbackQuery, session: AsyncSession) -> Non
 async def adm_prod_up(callback: CallbackQuery, session: AsyncSession) -> None:
     if not await _adm_check(callback):
         return
-    await callback.answer()
-    await admin_srv.move_product(session, int(PROD_UP_RE.match(callback.data).group(1)), -1)
+    await callback.answer("Порядок обновлён")
+    product_id = int(PROD_UP_RE.match(callback.data).group(1))
+    product = await get_product(session, product_id)
+    if product is None:
+        return
+    await admin_srv.move_product(session, product_id, -1)
+    await _show_products_edit(callback.message, session, product.category_id)
 
 
 @router.callback_query(F.data.regexp(PROD_DOWN_RE.pattern))
 async def adm_prod_down(callback: CallbackQuery, session: AsyncSession) -> None:
     if not await _adm_check(callback):
         return
-    await callback.answer()
-    await admin_srv.move_product(session, int(PROD_DOWN_RE.match(callback.data).group(1)), 1)
+    await callback.answer("Порядок обновлён")
+    product_id = int(PROD_DOWN_RE.match(callback.data).group(1))
+    product = await get_product(session, product_id)
+    if product is None:
+        return
+    await admin_srv.move_product(session, product_id, 1)
+    await _show_products_edit(callback.message, session, product.category_id)
+
+
+async def _show_products_edit(message: Message, session: AsyncSession, category_id: int) -> None:
+    """Показывает обновлённый список товаров категории вместо текущего сообщения."""
+    from bot.utils import edit_or_answer
+
+    category = await get_category(session, category_id)
+    products = list(
+        await session.scalars(
+            select(Product).where(Product.category_id == category_id).order_by(Product.sort_order, Product.id)
+        )
+    )
+    await edit_or_answer(
+        message,
+        RU["admin_products_title"].format(category=category.name if category else ""),
+        adm_products_kb(products, category_id),
+    )
 
 
 @router.callback_query(F.data.regexp(PROD_DEL_RE.pattern))
