@@ -16,8 +16,3 @@ async def cmd_start(message: Message) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     await message.answer(RU["help"])
-
-
-@router.message(Command("menu"))
-async def cmd_menu(message: Message) -> None:
-    await message.answer(RU["menu_soon"])

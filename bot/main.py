@@ -8,7 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
-from bot.handlers import common, start
+from bot.handlers import cart, catalog, common, start
 from bot.middlewares.db_session import DbSessionMiddleware
 from bot.middlewares.errors import ErrorHandlingMiddleware
 from bot.middlewares.throttling import ThrottlingMiddleware
@@ -44,6 +44,8 @@ async def main() -> None:
     dp.callback_query.middleware(UserRegistrationMiddleware())
 
     dp.include_router(start.router)
+    dp.include_router(catalog.router)
+    dp.include_router(cart.router)
     dp.include_router(common.router)
 
     await bot.set_my_commands(COMMANDS)

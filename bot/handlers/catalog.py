@@ -1,0 +1,133 @@
+import re
+
+from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import Command
+from aiogram.types import CallbackQuery, Message
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.keyboards.catalog import categories_kb, product_card_kb, products_kb
+from bot.texts import RU, fmt_price
+from bot.utils import edit_or_answer
+from core.cart import cart_qty, change_quantity
+from core.catalog import get_category, get_product, list_active_categories, list_available_products
+from core.users import get_user_by_tg_id
+from data.models import Product
+
+router = Router(name="catalog")
+
+CAT_RE = re.compile(r"^cat:(\d+)$")
+PROD_RE = re.compile(r"^prod:(\d+)$")
+QTY_RE = re.compile(r"^qty:(\d+):(-?\d+)$")
+
+
+async def db_user_id(session: AsyncSession, tg_id: int) -> int:
+    user = await get_user_by_tg_id(session, tg_id)
+    return user.id if user else 0
+
+
+def _product_card_text(product: Product, qty: int) -> str:
+    if qty:
+        in_cart = RU["in_cart"].format(qty=qty, sum=fmt_price(product.price * qty))
+    else:
+        in_cart = "В корзине: 0 шт"
+    return RU["product_card"].format(
+        name=product.name,
+        desc=product.description or "",
+        price=fmt_price(product.price),
+        in_cart=in_cart,
+    )
+
+
+async def show_product_card(message: Message, product: Product, qty: int, *, edit: bool) -> None:
+    """Карточка товара: фото (если есть) + текст + кнопки [- qty +]."""
+    kb = product_card_kb(product.id, qty, product.category_id)
+    text = _product_card_text(product, qty)
+    if product.photo_file_id:
+        if edit:
+            try:
+                await message.edit_caption(caption=text, reply_markup=kb)
+                return
+            except TelegramBadRequest:
+                pass
+        await message.answer_photo(product.photo_file_id, caption=text, reply_markup=kb)
+    else:
+        if edit:
+            try:
+                await message.edit_text(text, reply_markup=kb)
+                return
+            except TelegramBadRequest:
+                pass
+        await message.answer(text, reply_markup=kb)
+
+
+async def _show_categories(message: Message, session: AsyncSession) -> None:
+    cats = await list_active_categories(session)
+    if not cats:
+        await edit_or_answer(message, RU["menu_empty"])
+        return
+    await edit_or_answer(message, RU["menu_title"], categories_kb(cats))
+
+
+@router.message(Command("menu"))
+async def cmd_menu(message: Message, session: AsyncSession) -> None:
+    await _show_categories(message, session)
+
+
+@router.callback_query(F.data == "main:menu")
+async def cb_main_menu(callback: CallbackQuery, session: AsyncSession) -> None:
+    await callback.answer()
+    await _show_categories(callback.message, session)
+
+
+@router.callback_query(F.data == "cat:open")
+async def cb_categories(callback: CallbackQuery, session: AsyncSession) -> None:
+    await callback.answer()
+    await _show_categories(callback.message, session)
+
+
+@router.callback_query(F.data.regexp(r"^cat:\d+$"))
+async def cb_category(callback: CallbackQuery, session: AsyncSession) -> None:
+    await callback.answer()
+    match = CAT_RE.match(callback.data)
+    category = await get_category(session, int(match.group(1)))
+    if category is None:
+        await _show_categories(callback.message, session)
+        return
+    products = await list_available_products(session, category.id)
+    title = RU["category_title"].format(name=category.name)
+    if not products:
+        await edit_or_answer(callback.message, RU["category_empty"], products_kb([], category.id))
+        return
+    await edit_or_answer(callback.message, title, products_kb(products, category.id))
+
+
+@router.callback_query(F.data.regexp(r"^prod:\d+$"))
+async def cb_product(callback: CallbackQuery, session: AsyncSession) -> None:
+    await callback.answer()
+    match = PROD_RE.match(callback.data)
+    product = await get_product(session, int(match.group(1)))
+    if product is None:
+        await callback.message.answer(RU["product_not_found"])
+        return
+    qty = await cart_qty(session, await db_user_id(session, callback.from_user.id), product.id)
+    await show_product_card(callback.message, product, qty, edit=True)
+
+
+@router.callback_query(F.data.regexp(r"^qty:\d+:-?\d+$"))
+async def cb_qty(callback: CallbackQuery, session: AsyncSession) -> None:
+    await callback.answer()
+    match = QTY_RE.match(callback.data)
+    product_id, delta = int(match.group(1)), int(match.group(2))
+    product = await get_product(session, product_id)
+    if product is None:
+        await callback.message.answer(RU["product_not_found"])
+        return
+    if delta == 0:
+        return  # информационная кнопка «В корзине: N»
+    user_id = await db_user_id(session, callback.from_user.id)
+    if delta > 0 and not product.is_available:
+        await callback.message.answer(RU["product_unavailable"])
+        return
+    qty = await change_quantity(session, user_id, product.id, delta)
+    await show_product_card(callback.message, product, qty, edit=True)

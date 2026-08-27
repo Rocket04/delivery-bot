@@ -5,10 +5,8 @@ from bot.texts import RU
 
 router = Router(name="common")
 
-# Кнопки главного меню, работающие как заглушки до стадий 2–3
+# Кнопка «Мои заказы» работает как заглушка до стадии 3
 _PLACEHOLDERS = {
-    "main:menu": RU["menu_soon"],
-    "main:cart": RU["cart_soon"],
     "main:orders": RU["orders_soon"],
 }
 
