@@ -8,7 +8,7 @@ from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, Contact
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.catalog import db_user_id
@@ -150,10 +150,11 @@ async def cb_use_last_phone(callback: CallbackQuery, session: AsyncSession, stat
 
 
 @router.message(StateFilter(CheckoutState.phone), F.contact)
-async def on_contact(message: Message, state: FSMContext, contact: Contact) -> None:
+async def on_contact(message: Message, state: FSMContext) -> None:
     """Номер из Telegram (кнопка request_contact)."""
-    phone = contact.phone_number
-    validated, error = valid_phone(phone)
+    if message.contact is None:
+        return
+    validated, error = valid_phone(message.contact.phone_number)
     if error:
         await message.answer(error)
         return
@@ -248,23 +249,34 @@ async def on_time(message: Message, state: FSMContext, session: AsyncSession) ->
 
 
 @router.message(StateFilter(CheckoutState.comment))
-async def on_comment(message: Message, state: FSMContext) -> None:
+async def on_comment(message: Message, state: FSMContext, session: AsyncSession) -> None:
     comment, error = valid_comment(message.text)
     if error:
         await message.answer(error)
         return
     await state.update_data(comment=comment)
-    await _ask_deposit(message, state)
+    await _ask_deposit(message, state, session)
 
 
 @router.callback_query(F.data == "checkout:skip_comment", StateFilter(CheckoutState.comment))
-async def cb_skip_comment(callback: CallbackQuery, state: FSMContext) -> None:
+async def cb_skip_comment(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     await callback.answer()
     await state.update_data(comment=None)
-    await _ask_deposit(callback.message, state)
+    await _ask_deposit(callback.message, state, session)
 
 
-async def _ask_deposit(message: Message, state: FSMContext) -> None:
+async def _ask_deposit(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    # страховка: корзина опустела во время диалога (например, заказ уже оформлен) —
+    # сообщаем сразу, а не на сводке
+    user_id = await db_user_id(session, message.from_user.id)
+    view = await get_cart_view(session, user_id)
+    if not view.rows:
+        await state.clear()
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="🍕 В меню", callback_data="cat:open")]]
+        )
+        await message.answer(RU["checkout_cart_empty_summary"], reply_markup=kb)
+        return
     deposit_text = RU["checkout_deposit"].format(amount=fmt_price(get_settings().dish_deposit_amount))
     await state.set_state(CheckoutState.deposit)
     await message.answer(deposit_text, reply_markup=checkout_deposit_kb())
@@ -280,16 +292,19 @@ async def cb_deposit(callback: CallbackQuery, state: FSMContext, session: AsyncS
 
 async def _show_summary(message: Message, state: FSMContext, session: AsyncSession) -> None:
     data = await state.get_data()
-    if not data.get("scheduled"):
-        # кнопки старого диалога — нового оформления нет
-        await edit_or_answer(message, RU["checkout_cart_empty_summary"], cart_empty_kb())
-        return
-    scheduled = datetime.fromisoformat(data["scheduled"])
     user_id = await db_user_id(session, message.from_user.id)
     view = await get_cart_view(session, user_id)
-    if not view.rows:
-        await edit_or_answer(message, RU["checkout_cart_empty_summary"], cart_empty_kb())
+    if not data.get("scheduled") or not view.rows:
+        # пустая корзина / кнопки мёртвого диалога — объясняем и предлагаем выход
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🍕 В меню", callback_data="cat:open")],
+                [InlineKeyboardButton(text="📋 Мои заказы", callback_data="main:orders")],
+            ]
+        )
+        await edit_or_answer(message, RU["checkout_cart_empty_summary"], kb)
         return
+    scheduled = datetime.fromisoformat(data["scheduled"])
 
     lines = [
         f"👤 {data['name']}",
