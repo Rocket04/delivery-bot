@@ -20,3 +20,8 @@ Thumbs.db
 # Логи и данные
 logs/
 *.log
+
+# Артефакты сборки и uv
+*.egg-info/
+.uv-cache/
+.tmp/
