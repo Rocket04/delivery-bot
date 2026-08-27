@@ -3,10 +3,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: delivery
-      POSTGRES_PASSWORD: delivery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: delivery
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -14,12 +12,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
 
   bot:
     build: .
     env_file: .env
     environment:
-      DB_URL: postgresql+asyncpg://delivery:delivery@db:5432/delivery
+      DB_URL: postgresql+asyncpg://delivery:${POSTGRES_PASSWORD:?}@db:5432/delivery
     depends_on:
       db:
         condition: service_healthy
