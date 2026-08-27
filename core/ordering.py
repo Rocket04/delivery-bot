@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
 from core.cart import clear_cart, get_cart_view
-from core.constants import ORDER_TRANSITIONS, PaymentStatus
+from core.constants import DeliveryMethod, ORDER_TRANSITIONS, PaymentStatus
 from data.models import Order, OrderEvent, OrderItem
 
 ORDER_STATUS_LABELS = {
@@ -27,7 +27,7 @@ ORDER_STATUS_LABELS = {
 
 DELIVERY_METHOD_LABELS = {
     "own": "🚗 Наша доставка",
-    "yandex": "🚚 Яндекс.Доставка",
+    "yandex": "🚚 Яндекс.Доставка (курьера вызывает клиент)",
     "pickup": "🏠 Самовывоз",
 }
 
@@ -107,6 +107,8 @@ def order_summary_text(order: Order, items: list[OrderItem]) -> str:
     )
     if order.delivery_price:
         lines.append(f"Доставка — {format_money(order.delivery_price)}")
+    if order.delivery_method == DeliveryMethod.YANDEX:
+        lines.append("⚠️ Яндекс-курьера вызывает клиент сам и оплачивает по тарифам Яндекса")
     if order.deposit:
         lines.append(f"🍽 Восточная посуда — залог {format_money(order.deposit)} (возвратный)")
     lines.append("————————————")

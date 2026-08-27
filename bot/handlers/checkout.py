@@ -8,7 +8,7 @@ from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, Contact
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.catalog import db_user_id
@@ -18,6 +18,9 @@ from bot.keyboards.checkout import (
     checkout_date_kb,
     checkout_deposit_kb,
     checkout_method_kb,
+    checkout_name_kb,
+    checkout_phone_kb,
+    checkout_phone_reply_kb,
     checkout_summary_kb,
 )
 from bot.notify import send_order_to_operators
@@ -78,17 +81,18 @@ async def cb_start_checkout(callback: CallbackQuery, session: AsyncSession, stat
     if error:
         await callback.message.answer(RU["checkout_error"].format(error=error))
         return
+    await state.clear()
     await state.set_state(CheckoutState.name)
     await callback.message.answer(RU["checkout_start"])
 
 
-@router.callback_query(F.data == "checkout:use_tg_name")
-async def cb_use_tg_name(callback: CallbackQuery, state: FSMContext) -> None:
-    await callback.answer()
-    name = (callback.from_user.first_name or "Друг").strip()
-    await state.update_data(name=name)
-    await state.set_state(CheckoutState.phone)
-    await callback.message.answer(RU["checkout_phone"])
+async def _ask_name(message: Message, session: AsyncSession, state: FSMContext) -> None:
+    await state.set_state(CheckoutState.name)
+    user = await get_user_by_tg_id(session, message.from_user.id)
+    if user and user.contact_name:
+        await message.answer(RU["checkout_start"], reply_markup=checkout_name_kb(user.contact_name))
+    else:
+        await message.answer(RU["checkout_start"])
 
 
 @router.message(StateFilter(CheckoutState.name))
@@ -99,16 +103,65 @@ async def on_name(message: Message, state: FSMContext) -> None:
         return
     await state.update_data(name=name)
     await state.set_state(CheckoutState.phone)
-    await message.answer(RU["checkout_phone"])
+    await _ask_phone(message, state, phone=None)
 
 
-@router.message(StateFilter(CheckoutState.phone))
+@router.callback_query(F.data == "checkout:use_last_name")
+async def cb_use_last_name(callback: CallbackQuery, session: AsyncSession, state: FSMContext) -> None:
+    await callback.answer()
+    user = await get_user_by_tg_id(session, callback.from_user.id)
+    name = user.contact_name if user and user.contact_name else None
+    if not name:
+        await callback.message.answer(RU["checkout_start"])
+        return
+    await state.update_data(name=name)
+    await state.set_state(CheckoutState.phone)
+    await _ask_phone(callback.message, state, phone=user.phone)
+
+
+async def _ask_phone(message: Message, state: FSMContext, phone: str | None) -> None:
+    await state.set_state(CheckoutState.phone)
+    reply_kb = checkout_phone_reply_kb()
+    if phone:
+        await message.answer(RU["checkout_phone"], reply_markup=checkout_phone_kb(phone))
+    else:
+        await message.answer(RU["checkout_phone"], reply_markup=reply_kb)
+
+
+@router.message(StateFilter(CheckoutState.phone), F.text)
 async def on_phone(message: Message, state: FSMContext) -> None:
     phone, error = valid_phone(message.text)
     if error:
         await message.answer(error)
         return
     await state.update_data(phone=phone)
+    await _ask_method(message, state)
+
+
+@router.callback_query(F.data == "checkout:use_last_phone")
+async def cb_use_last_phone(callback: CallbackQuery, session: AsyncSession, state: FSMContext) -> None:
+    await callback.answer()
+    user = await get_user_by_tg_id(session, callback.from_user.id)
+    if not user or not user.phone:
+        await _ask_phone(callback.message, state, phone=None)
+        return
+    await state.update_data(phone=user.phone)
+    await _ask_method(callback.message, state)
+
+
+@router.message(StateFilter(CheckoutState.phone), F.contact)
+async def on_contact(message: Message, state: FSMContext, contact: Contact) -> None:
+    """Номер из Telegram (кнопка request_contact)."""
+    phone = contact.phone_number
+    validated, error = valid_phone(phone)
+    if error:
+        await message.answer(error)
+        return
+    await state.update_data(phone=validated)
+    await _ask_method(message, state)
+
+
+async def _ask_method(message: Message, state: FSMContext) -> None:
     await state.set_state(CheckoutState.method)
     await message.answer(RU["checkout_method"], reply_markup=checkout_method_kb())
 
@@ -118,15 +171,20 @@ async def cb_method(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     method = callback.data.split(":")[1]
     await state.update_data(method=method)
+    # снимаем reply-клавиатуру номера телефона, если осталась
     if method == DeliveryMethod.PICKUP:
         await state.update_data(address="Самовывоз: Рабочий переулок, 2а-1")
         await callback.message.answer(
             RU["checkout_pickup_note"] + "\n\n" + RU["checkout_date"],
-            reply_markup=checkout_date_kb(),
+            reply_markup=ReplyKeyboardRemove(),
         )
+        await callback.message.answer(RU["checkout_date"], reply_markup=checkout_date_kb())
     else:
         await state.set_state(CheckoutState.address)
-        await callback.message.answer(RU["checkout_address"])
+        await callback.message.answer(
+            RU["checkout_address_yandex"] if method == DeliveryMethod.YANDEX else RU["checkout_address"],
+            reply_markup=ReplyKeyboardRemove(),
+        )
 
 
 @router.message(StateFilter(CheckoutState.address))
@@ -181,7 +239,8 @@ async def on_time(message: Message, state: FSMContext, session: AsyncSession) ->
     view = await get_cart_view(session, user_id)
     error = validate_schedule(settings, view.total, scheduled)
     if error:
-        await message.answer(RU["checkout_time_error"].format(error=error))
+        hint = RU["lead_operator_hint"] if ("предзаказу" in error or "крупный" in error) else ""
+        await message.answer(RU["checkout_time_error"].format(error=error, hint=hint))
         return
     await state.update_data(scheduled=scheduled.isoformat())
     await state.set_state(CheckoutState.comment)
@@ -198,7 +257,7 @@ async def on_comment(message: Message, state: FSMContext) -> None:
     await _ask_deposit(message, state)
 
 
-@router.callback_query(F.data == "checkout:skip_comment")
+@router.callback_query(F.data == "checkout:skip_comment", StateFilter(CheckoutState.comment))
 async def cb_skip_comment(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     await state.update_data(comment=None)
@@ -211,7 +270,7 @@ async def _ask_deposit(message: Message, state: FSMContext) -> None:
     await message.answer(deposit_text, reply_markup=checkout_deposit_kb())
 
 
-@router.callback_query(F.data.in_({"checkout:deposit_yes", "checkout:deposit_no"}))
+@router.callback_query(F.data.in_({"checkout:deposit_yes", "checkout:deposit_no"}), StateFilter(CheckoutState.deposit))
 async def cb_deposit(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     await callback.answer()
     deposit = get_settings().dish_deposit_amount if callback.data == "checkout:deposit_yes" else 0
@@ -221,9 +280,16 @@ async def cb_deposit(callback: CallbackQuery, state: FSMContext, session: AsyncS
 
 async def _show_summary(message: Message, state: FSMContext, session: AsyncSession) -> None:
     data = await state.get_data()
+    if not data.get("scheduled"):
+        # кнопки старого диалога — нового оформления нет
+        await edit_or_answer(message, RU["checkout_cart_empty_summary"], cart_empty_kb())
+        return
     scheduled = datetime.fromisoformat(data["scheduled"])
     user_id = await db_user_id(session, message.from_user.id)
     view = await get_cart_view(session, user_id)
+    if not view.rows:
+        await edit_or_answer(message, RU["checkout_cart_empty_summary"], cart_empty_kb())
+        return
 
     lines = [
         f"👤 {data['name']}",
@@ -237,6 +303,8 @@ async def _show_summary(message: Message, state: FSMContext, session: AsyncSessi
         lines.append(f"📝 {data['comment']}")
     if data.get("deposit"):
         lines.append(f"🍽 Восточная посуда — залог {fmt_price(data['deposit'])} (возвратный)")
+    if data.get("method") == DeliveryMethod.YANDEX:
+        lines.append("⚠️ Яндекс-курьера вызываешь сам, оплата по тарифам Яндекса")
     lines.append("")
     lines.append("————————————")
     lines.extend(
@@ -280,18 +348,27 @@ async def cb_confirm(callback: CallbackQuery, session: AsyncSession, state: FSMC
         await callback.message.answer(RU["checkout_error"].format(error=str(exc)))
         return
 
+    # запоминаем данные клиента для следующего оформления
     user = await get_user_by_tg_id(session, callback.from_user.id)
-    if user is not None and user.phone != data["phone"]:
+    if user is not None:
         user.phone = data["phone"]
+        user.contact_name = data["name"]
         await session.commit()
 
     await state.clear()
-    await callback.message.answer(RU["checkout_created"].format(number=order.number))
+    await callback.message.answer(
+        RU["checkout_created"].format(number=order.number), reply_markup=ReplyKeyboardRemove()
+    )
     await send_order_to_operators(callback.bot, session, order)
 
 
-@router.callback_query(F.data == "checkout:redo")
-async def cb_redo(callback: CallbackQuery, state: FSMContext) -> None:
+@router.callback_query(F.data == "checkout:redo", StateFilter(CheckoutState.deposit))
+async def cb_redo(callback: CallbackQuery, session: AsyncSession, state: FSMContext) -> None:
+    """Перезапуск оформления с чистого листа (но корзину не трогаем)."""
     await callback.answer()
     await state.clear()
-    await callback.message.answer("Давай заново! " + RU["checkout_start"])
+    await state.set_state(CheckoutState.name)
+    text = RU["checkout_restart"] + RU["checkout_start"]
+    user = await get_user_by_tg_id(session, callback.from_user.id)
+    kb = checkout_name_kb(user.contact_name) if user and user.contact_name else None
+    await callback.message.answer(text, reply_markup=kb)

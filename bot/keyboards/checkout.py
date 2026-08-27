@@ -1,5 +1,32 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+
+def checkout_name_kb(saved_name: str) -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text=f"👤 Использовать: {saved_name}", callback_data="checkout:use_last_name"))
+    return b.as_markup()
+
+
+def checkout_phone_reply_kb() -> ReplyKeyboardMarkup:
+    """Reply-клавиатура с кнопкой «номер из Telegram» (request_contact)."""
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="📱 Отправить номер из Telegram", request_contact=True)]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+
+
+def checkout_phone_kb(saved_phone: str) -> InlineKeyboardMarkup:
+    """Inline-кнопка «использовать прошлый номер» + reply-клавиатура выше."""
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text=f"📱 Использовать: {saved_phone}", callback_data="checkout:use_last_phone"))
+    return b.as_markup()
 
 
 def checkout_method_kb() -> InlineKeyboardMarkup:

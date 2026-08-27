@@ -41,6 +41,7 @@ class User(Base):
     first_name: Mapped[str | None] = mapped_column(String(128))
     last_name: Mapped[str | None] = mapped_column(String(128))
     phone: Mapped[str | None] = mapped_column(String(32))  # заполняется при первом заказе
+    contact_name: Mapped[str | None] = mapped_column(String(128))  # имя из последнего заказа
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
