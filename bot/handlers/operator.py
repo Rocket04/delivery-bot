@@ -23,6 +23,7 @@ from core.ordering import (
     latest_awaiting_prepayment,
     transition,
 )
+from core.validation import valid_delivery_price, valid_required_text
 from data.models import User
 
 router = Router(name="operator")
@@ -37,7 +38,6 @@ DELIVERING_RE = re.compile(r"^op:delivering:(\d+)$")
 DELIVERED_RE = re.compile(r"^op:delivered:(\d+)$")
 RECEIPT_REJECTED_RE = re.compile(r"^op:receipt_rejected:(\d+)$")
 PAY_METHOD_RE = re.compile(r"^op:(kaspi_transfer|kaspi_link|kaspi_remote):(\d+)$")
-_PRICE_RE = re.compile(r"^\d{1,7}$")
 
 
 class OpState(StatesGroup):
@@ -81,12 +81,12 @@ async def op_confirm(callback: CallbackQuery, session: AsyncSession, state: FSMC
 
 @router.message(StateFilter(OpState.price))
 async def op_price_text(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    text = (message.text or "").strip().replace(" ", "")
-    if not _PRICE_RE.match(text):
-        await message.answer(RU["op_price_invalid"])
+    price, error = valid_delivery_price(message.text)
+    if error:
+        await message.answer(error)
         return
     data = await state.get_data()
-    await state.update_data(delivery_price=int(text))
+    await state.update_data(delivery_price=price)
     await state.set_state(OpState.pay_method)
     order = await get_order(session, data["order_id"])
     if order is None:
@@ -115,8 +115,9 @@ async def op_pay_method(callback: CallbackQuery, session: AsyncSession, state: F
 
 @router.message(StateFilter(OpState.pay_details))
 async def op_pay_details(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    details = (message.text or "").strip()
-    if not details:
+    details, error = valid_required_text(message.text)
+    if error:
+        await message.answer(error)
         return
     data = await state.get_data()
     order = await get_order(session, data["order_id"])
@@ -257,8 +258,9 @@ async def op_cancel(callback: CallbackQuery, session: AsyncSession, state: FSMCo
 
 @router.message(StateFilter(OpState.cancel_reason))
 async def op_cancel_reason(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    reason = (message.text or "").strip()
-    if not reason:
+    reason, error = valid_required_text(message.text)
+    if error:
+        await message.answer(error)
         return
     data = await state.get_data()
     order = await get_order(session, data["order_id"])

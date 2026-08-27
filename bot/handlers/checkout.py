@@ -33,11 +33,10 @@ from core.ordering import (
     validate_schedule,
 )
 from core.users import get_user_by_tg_id
+from core.validation import valid_address, valid_comment, valid_date_ddmm, valid_name, valid_phone, valid_time_hm
 
 router = Router(name="checkout")
 
-DATE_RE = re.compile(r"^\d{2}\.\d{2}$")
-TIME_RE = re.compile(r"^(\d{1,2}):(\d{2})$")
 METHOD_RE = re.compile(r"^sel_method:(own|yandex|pickup)$")
 DATE_SEL_RE = re.compile(r"^sel_date:(0|1|2|custom)$")
 
@@ -92,9 +91,9 @@ async def cb_use_tg_name(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(CheckoutState.name))
 async def on_name(message: Message, state: FSMContext) -> None:
-    name = (message.text or "").strip()
-    if not 2 <= len(name) <= 60:
-        await message.answer("Имя слишком короткое или длинное. Напиши ещё раз.")
+    name, error = valid_name(message.text)
+    if error:
+        await message.answer(error)
         return
     await state.update_data(name=name)
     await state.set_state(CheckoutState.phone)
@@ -103,11 +102,11 @@ async def on_name(message: Message, state: FSMContext) -> None:
 
 @router.message(StateFilter(CheckoutState.phone))
 async def on_phone(message: Message, state: FSMContext) -> None:
-    digits = re.sub(r"\D", "", message.text or "")
-    if not 7 <= len(digits) <= 15:
-        await message.answer(RU["checkout_phone_invalid"])
+    phone, error = valid_phone(message.text)
+    if error:
+        await message.answer(error)
         return
-    await state.update_data(phone=message.text.strip())
+    await state.update_data(phone=phone)
     await state.set_state(CheckoutState.method)
     await message.answer(RU["checkout_method"], reply_markup=checkout_method_kb())
 
@@ -130,9 +129,9 @@ async def cb_method(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(CheckoutState.address))
 async def on_address(message: Message, state: FSMContext) -> None:
-    address = (message.text or "").strip()
-    if len(address) < 5:
-        await message.answer("Адрес слишком короткий. Пришли полный адрес: улица, дом, квартира.")
+    address, error = valid_address(message.text)
+    if error:
+        await message.answer(error)
         return
     await state.update_data(address=address)
     await message.answer(RU["checkout_date"], reply_markup=checkout_date_kb())
@@ -155,18 +154,10 @@ async def cb_date(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(CheckoutState.date_custom))
 async def on_date_custom(message: Message, state: FSMContext) -> None:
-    text = (message.text or "").strip()
-    match = DATE_RE.match(text)
-    if not match:
-        await message.answer(RU["checkout_date_invalid"])
+    day, error = valid_date_ddmm(message.text)
+    if error:
+        await message.answer(error)
         return
-    dd, mm = map(int, text.split("."))
-    if not (1 <= mm <= 12 and 1 <= dd <= 31):
-        await message.answer(RU["checkout_date_invalid"])
-        return
-    today = date.today()
-    year = today.year if (mm, dd) > (today.month, today.day) else today.year + 1
-    day = date(year, mm, dd)
     await state.update_data(day=day.isoformat())
     await state.set_state(CheckoutState.time)
     await message.answer(RU["checkout_time"])
@@ -174,14 +165,11 @@ async def on_date_custom(message: Message, state: FSMContext) -> None:
 
 @router.message(StateFilter(CheckoutState.time))
 async def on_time(message: Message, state: FSMContext, session: AsyncSession) -> None:
-    match = TIME_RE.match((message.text or "").strip())
-    if not match:
-        await message.answer(RU["checkout_time_invalid"])
+    hhmm, error = valid_time_hm(message.text)
+    if error:
+        await message.answer(error)
         return
-    hour, minute = int(match.group(1)), int(match.group(2))
-    if hour > 23 or minute > 59:
-        await message.answer(RU["checkout_time_invalid"])
-        return
+    hour, minute = hhmm
     settings = get_settings()
     data = await state.get_data()
     day = date.fromisoformat(data["day"])
@@ -200,7 +188,11 @@ async def on_time(message: Message, state: FSMContext, session: AsyncSession) ->
 
 @router.message(StateFilter(CheckoutState.comment))
 async def on_comment(message: Message, state: FSMContext) -> None:
-    await state.update_data(comment=(message.text or "").strip() or None)
+    comment, error = valid_comment(message.text)
+    if error:
+        await message.answer(error)
+        return
+    await state.update_data(comment=comment)
     await _show_summary(message, state)
 
 

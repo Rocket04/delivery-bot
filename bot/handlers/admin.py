@@ -23,11 +23,10 @@ from bot.texts import RU, fmt_price
 from config.settings import get_settings
 from core import admin as admin_srv
 from core.catalog import get_category, get_product
+from core.validation import valid_name, valid_price
 from data.models import Category, Product
 
 router = Router(name="admin")
-
-_PRICE_RE = re.compile(r"^\d{3,8}$")
 
 CAT_RE = re.compile(r"^adm:cat:(\d+)$")
 CAT_RENAME_RE = re.compile(r"^adm:cat_rename:(\d+)$")
@@ -169,8 +168,9 @@ async def adm_cat_new(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(AdminState.new_cat_name))
 async def adm_cat_new_name(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    name = (message.text or "").strip()
-    if not 1 <= len(name) <= 120:
+    name, error = valid_name(message.text, max_len=120)
+    if error:
+        await message.answer(error)
         return
     category = await admin_srv.add_category(session, name)
     await state.clear()
@@ -191,8 +191,12 @@ async def adm_cat_rename(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(AdminState.cat_rename))
 async def adm_cat_rename_text(message: Message, session: AsyncSession, state: FSMContext) -> None:
+    name, error = valid_name(message.text, max_len=120)
+    if error:
+        await message.answer(error)
+        return
     data = await state.get_data()
-    category = await admin_srv.rename_category(session, data["cat_id"], (message.text or "").strip())
+    category = await admin_srv.rename_category(session, data["cat_id"], name)
     await state.clear()
     if category is None:
         return
@@ -310,8 +314,9 @@ async def adm_prod_new(callback: CallbackQuery, session: AsyncSession, state: FS
 
 @router.message(StateFilter(AdminState.prod_new_name))
 async def adm_prod_new_name(message: Message, state: FSMContext) -> None:
-    name = (message.text or "").strip()
-    if not 1 <= len(name) <= 160:
+    name, error = valid_name(message.text, max_len=160)
+    if error:
+        await message.answer(error)
         return
     await state.update_data(prod_name=name)
     await state.set_state(AdminState.prod_new_price)
@@ -320,11 +325,11 @@ async def adm_prod_new_name(message: Message, state: FSMContext) -> None:
 
 @router.message(StateFilter(AdminState.prod_new_price))
 async def adm_prod_new_price(message: Message, state: FSMContext) -> None:
-    digits = re.sub(r"\D", "", message.text or "")
-    if not _PRICE_RE.match(digits):
-        await message.answer(RU["admin_price_invalid"])
+    price, error = valid_price(message.text)
+    if error:
+        await message.answer(error)
         return
-    await state.update_data(prod_price=int(digits))
+    await state.update_data(prod_price=price)
     await state.set_state(AdminState.prod_new_desc)
     await message.answer(RU["admin_prod_new_desc"], reply_markup=adm_skip_kb())
 
@@ -397,8 +402,12 @@ async def adm_prod_name(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(AdminState.prod_name))
 async def adm_prod_name_text(message: Message, session: AsyncSession, state: FSMContext) -> None:
+    name, error = valid_name(message.text, max_len=160)
+    if error:
+        await message.answer(error)
+        return
     data = await state.get_data()
-    product = await admin_srv.update_product(session, data["prod_id"], name=(message.text or "").strip())
+    product = await admin_srv.update_product(session, data["prod_id"], name=name)
     await state.clear()
     if product:
         await message.answer(RU["admin_ok"].format(what=f"Название обновлено: {product.name}"))
@@ -416,12 +425,12 @@ async def adm_prod_price(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(StateFilter(AdminState.prod_price))
 async def adm_prod_price_text(message: Message, session: AsyncSession, state: FSMContext) -> None:
-    digits = re.sub(r"\D", "", message.text or "")
-    if not _PRICE_RE.match(digits):
-        await message.answer(RU["admin_price_invalid"])
+    price, error = valid_price(message.text)
+    if error:
+        await message.answer(error)
         return
     data = await state.get_data()
-    product = await admin_srv.update_product(session, data["prod_id"], price=int(digits))
+    product = await admin_srv.update_product(session, data["prod_id"], price=price)
     await state.clear()
     if product:
         await message.answer(RU["admin_ok"].format(what=f"Цена: {fmt_price(product.price)}"))
