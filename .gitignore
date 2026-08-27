@@ -25,3 +25,4 @@ logs/
 *.egg-info/
 .uv-cache/
 .tmp/
+pytest-cache-files-*/
