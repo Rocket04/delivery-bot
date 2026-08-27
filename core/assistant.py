@@ -130,8 +130,13 @@ async def answer_freetext(
     text: str,
     provider: LLMProvider,
     settings: Settings,
+    history: list[tuple[str, str]] | None = None,
 ) -> AssistantAnswer:
-    """Обрабатывает свободный текст клиента (см. порядок в докстринге модуля)."""
+    """Обрабатывает свободный текст клиента (см. порядок в докстринге модуля).
+
+    history — недавние реплики (role, text) диалога: «Клиент»/«Бот»;
+    передаётся в LLM, чтобы ассистент помнил контекст разговора.
+    """
     # 1. Эскалация — человек в контуре
     kw = escalation_reason(text)
     if kw:
@@ -144,9 +149,16 @@ async def answer_freetext(
 
     # 3. LLM
     context = await collect_context(session, user_id, settings)
+    user_prompt = text
+    if history:
+        lines = []
+        for role, msg in history[-8:]:
+            who = "Клиент" if role == "user" else "Бот"
+            lines.append(f"{who}: {msg[:300]}")
+        user_prompt = f"История диалога:\n" + "\n".join(lines) + f"\n\nНовое сообщение клиента: {text}"
     try:
         reply = await provider.complete(
-            system=build_system_prompt(context), user=text, max_tokens=settings.llm_max_tokens
+            system=build_system_prompt(context), user=user_prompt, max_tokens=settings.llm_max_tokens
         )
     except LLMError:
         log.exception("LLM недоступен — фолбэк на оператора")
