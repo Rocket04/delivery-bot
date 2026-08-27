@@ -48,6 +48,14 @@ log = logging.getLogger(__name__)
 METHOD_RE = re.compile(r"^sel_method:(own|yandex|pickup)$")
 DATE_SEL_RE = re.compile(r"^sel_date:(0|1|2|custom)$")
 
+# Терминальные кнопки после оформления: контроль заказа + выход в меню
+TERMINAL_KB = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="📋 Мои заказы", callback_data="main:orders")],
+        [InlineKeyboardButton(text="🍕 В меню", callback_data="cat:open")],
+    ]
+)
+
 
 class CheckoutState(StatesGroup):
     name = State()
@@ -392,7 +400,7 @@ async def cb_confirm(callback: CallbackQuery, session: AsyncSession, state: FSMC
 
     await state.clear()
     await callback.message.answer(
-        RU["checkout_created"].format(number=order.number), reply_markup=ReplyKeyboardRemove()
+        RU["checkout_created"].format(number=order.number), reply_markup=TERMINAL_KB
     )
     await send_order_to_operators(callback.bot, session, order)
 

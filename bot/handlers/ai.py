@@ -36,6 +36,7 @@ from core.ordering import (
     DELIVERY_METHOD_LABELS,
     OrderError,
     create_order,
+    format_money,
 )
 from core.users import get_user_by_tg_id
 from core.validation import valid_address, valid_phone, valid_time_hm
@@ -81,6 +82,33 @@ def _confirm_kb() -> InlineKeyboardMarkup:
     )
 
 
+def _cart_menu_kb() -> InlineKeyboardMarkup:
+    """После очистки корзины: снова в меню/корзину."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🛒 В корзину", callback_data="cart:open")],
+            [InlineKeyboardButton(text="🍕 В меню", callback_data="cat:open")],
+        ]
+    )
+
+
+def _terminal_kb() -> InlineKeyboardMarkup:
+    """Конец диалога: контроль заказа + выход в меню."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📋 Мои заказы", callback_data="main:orders")],
+            [InlineKeyboardButton(text="🍕 В меню", callback_data="cat:open")],
+        ]
+    )
+
+
+def _cart_lines(view) -> str:
+    rows = "\n".join(
+        f"{r.name} ×{r.quantity} — {format_money(r.price * r.quantity)}" for r in view.rows
+    )
+    return rows or "—"
+
+
 async def _start_order_flow(message: Message, session: AsyncSession, state: FSMContext) -> None:
     """Начинает уточнение деталей заказа после добавления корзины."""
     user = await get_user_by_tg_id(session, message.from_user.id)
@@ -109,10 +137,15 @@ async def on_freetext(message: Message, session: AsyncSession, state: FSMContext
         user_id = await db_user_id(session, message.from_user.id)
         for mi in matched:
             await change_quantity(session, user_id, mi.product.id, mi.quantity)
+        view = await get_cart_view(session, user_id)
         await state.clear()
         await state.update_data(added=[mi.display for mi in matched])
         await message.answer(
-            RU["ai_order_start"].format(items="\n".join(mi.display for mi in matched))
+            RU["ai_order_start"].format(
+                items="\n".join(mi.display for mi in matched),
+                rows=_cart_lines(view),
+                total=format_money(view.total),
+            )
         )
         await _start_order_flow(message, session, state)
         return
@@ -231,10 +264,12 @@ async def cb_ai_confirm(callback: CallbackQuery, session: AsyncSession, state: F
     await send_order_to_operators(callback.bot, session, order)
     try:
         await callback.message.edit_text(
-            RU["ai_order_done"].format(number=order.number), reply_markup=None
+            RU["ai_order_done"].format(number=order.number), reply_markup=_terminal_kb()
         )
     except Exception:
-        await callback.message.answer(RU["ai_order_done"].format(number=order.number))
+        await callback.message.answer(
+            RU["ai_order_done"].format(number=order.number), reply_markup=_terminal_kb()
+        )
 
 
 @router.callback_query(F.data == "ai:abort")
@@ -244,4 +279,4 @@ async def cb_ai_abort(callback: CallbackQuery, session: AsyncSession, state: FSM
     await clear_cart(session, user_id)
     await session.commit()
     await state.clear()
-    await callback.message.edit_text(RU["ai_order_cleared"], reply_markup=None)
+    await callback.message.edit_text(RU["ai_order_cleared"], reply_markup=_cart_menu_kb())
