@@ -159,6 +159,29 @@ RU = {
     "my_orders_title": "📋 <b>Твои заказы</b>",
     "my_order_row": "№{number} · {date} · {status}",
     "my_order_detail": "🧾 <b>Заказ №{number}</b>\n\n{summary}\n\nСтатус: {status}",
+    # Отмена заказа клиентом (бэклог)
+    "order_cancel_btn": "❌ Отменить заказ",
+    "order_cancel_confirm": (
+        "❓ Точно отменить заказ №{number}?\n\n"
+        "Отменить можно, пока мы не приняли оплату и не начали готовить."
+    ),
+    "order_cancel_yes_btn": "✅ Да, отменить",
+    "order_cancel_no_btn": "↩️ Нет, оставить",
+    "order_cancelled_ok": "❌ Заказ №{number} отменён.\n\nЕсли передумаешь — оформим новый в меню 🍕",
+    "order_cancel_keep": "✅ Заказ №{number} в силе!",
+    "order_cancel_denied_hint": "Этот заказ уже нельзя отменить самому — напиши оператору, разберёмся.",
+    "order_action_error": "⚠️ {error}",
+    # Повторный заказ (бэклог, фаза 2)
+    "order_repeat_btn": "🔁 Заказать снова",
+    "order_repeat_done": (
+        "🔁 Заказ №{number} снова в корзине:\n"
+        "{added}\n\n"
+        "{skipped_note}Корзина ждёт тебя:"
+    ),
+    "order_repeat_skipped": "Не получилось добавить:\n{skipped}\n\n",
+    "order_repeat_nothing": "😔 Ничего не получилось добавить — этих блюд сейчас нет в меню.",
+    "order_go_cart_btn": "🛒 В корзину",
+    "op_user_cancelled": "❌ <b>Клиент отменил заказ №{number}.</b>\n\nЗаказ помечен как отменённый — дальнейших действий не нужно.",
     "orders_soon": "📋 История заказов появится скоро — после стадии оформления.",
     "no_awaiting_order": "📎 У тебя нет заказов, ожидающих предоплату. Оформи новый в меню!",
     # --- Админка ---

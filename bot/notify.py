@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.keyboards.operator import operator_kb
+from bot.texts import RU
 from core.ordering import ORDER_STATUS_LABELS, order_summary_text
 from data.models import Order, OrderItem
 
@@ -42,6 +43,26 @@ async def send_order_to_operators(bot: Bot, session: AsyncSession, order: Order)
         import logging
 
         logging.getLogger(__name__).exception("Ошибка отправки заказа в группу операторов")
+
+
+async def notify_user_cancelled(bot: Bot, order: Order) -> None:
+    """Сообщает группе операторов, что клиент сам отменил заказ.
+
+    Карточка в группе остаётся со старыми кнопками — нажатия по ним
+    упадут с «переход недопустим», но это не роняет бота; отдельное
+    сообщение гарантирует, что оператор не начнёт подтверждать отменённый заказ.
+    """
+    from config.settings import get_settings
+
+    chat_id = get_settings().operator_chat_id
+    if not chat_id:
+        return
+    try:
+        await bot.send_message(chat_id, RU["op_user_cancelled"].format(number=order.number))
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Ошибка уведомления операторов об отмене клиентом")
 
 
 async def update_order_card(

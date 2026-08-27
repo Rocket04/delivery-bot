@@ -4,6 +4,7 @@
 (pомечено на i18n на стадии 5).
 """
 
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -11,9 +12,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
-from core.cart import clear_cart, get_cart_view
-from core.constants import DeliveryMethod, ORDER_TRANSITIONS, PaymentStatus
-from data.models import Order, OrderEvent, OrderItem
+from core.cart import change_quantity, clear_cart, get_cart_view
+from core.constants import (
+    DeliveryMethod,
+    ORDER_TRANSITIONS,
+    OrderStatus,
+    PaymentStatus,
+    USER_CANCELLABLE,
+)
+from data.models import Order, OrderEvent, OrderItem, Product
 
 ORDER_STATUS_LABELS = {
     "created": "⏳ Ждёт подтверждения",
@@ -233,3 +240,57 @@ async def transition(session: AsyncSession, order: Order, to_status: str, actor:
         OrderEvent(order_id=order.id, from_status=from_status, to_status=to_status, actor=actor, note=note)
     )
     await session.commit()
+
+
+def user_can_cancel(order: Order) -> bool:
+    """Может ли клиент отменить заказ сам (для показа кнопки).
+
+    Окно отмены: created; awaiting_prepayment — пока чек не прислан
+    (после приёма чека отменой занимается оператор — возможен возврат денег).
+    """
+    if order.status not in USER_CANCELLABLE:
+        return False
+    if order.status == OrderStatus.AWAITING_PREPAYMENT and order.receipt_photo_file_id:
+        return False
+    return True
+
+
+async def cancel_order_by_user(session: AsyncSession, order: Order, note: str = "Отменён клиентом") -> None:
+    """Отмена заказа самим клиентом (бэклог: «Отмена заказа клиентом»)."""
+    if not user_can_cancel(order):
+        raise OrderError("Этот заказ уже нельзя отменить самому — напиши оператору, разберёмся.")
+    await transition(session, order, OrderStatus.CANCELLED, actor="user", note=note)
+
+
+@dataclass
+class RepeatResult:
+    """Итог «Заказать снова»: что добавлено в корзину, что пропущено и почему."""
+
+    added: list[str]
+    skipped: list[str]
+
+
+async def repeat_order(session: AsyncSession, order_id: int, user_id: int) -> RepeatResult:
+    """Переносит состав заказа в корзину клиента («Заказать снова»).
+
+    Позиции из снапшотов: товар, которого больше нет в меню или который в
+    стоп-листе, пропускается с пояснением; остальное добавляется к корзине
+    (количество суммируется поверх уже лежащего).
+    """
+    order = await session.get(Order, order_id)
+    if order is None or order.user_id != user_id:
+        raise OrderError("Заказ не найден.")
+    items = list(await session.scalars(select(OrderItem).where(OrderItem.order_id == order.id)))
+    added: list[str] = []
+    skipped: list[str] = []
+    for item in items:
+        label = f"{item.name} ×{item.quantity}"
+        product = await session.get(Product, item.product_id) if item.product_id else None
+        if product is None:
+            skipped.append(f"{label} — больше нет в меню")
+        elif not product.is_available:
+            skipped.append(f"{label} — сейчас нет в наличии")
+        else:
+            await change_quantity(session, user_id, product.id, item.quantity)
+            added.append(label)
+    return RepeatResult(added=added, skipped=skipped)

@@ -22,8 +22,10 @@ ORDER_TRANSITIONS: dict[str, set[str]] = {
     OrderStatus.CANCELLED: set(),
 }
 
-# Статусы, из которых пользователь может отменить заказ сам
-USER_CANCELLABLE: set[str] = {OrderStatus.CREATED}
+# Статусы, из которых пользователь может отменить заказ сам.
+# «created» — всегда; «awaiting_prepayment» — пока клиент не прислал чек
+# (см. user_can_cancel в core/ordering.py). Дальше вопросом занимается оператор.
+USER_CANCELLABLE: set[str] = {OrderStatus.CREATED, OrderStatus.AWAITING_PREPAYMENT}
 
 
 class DeliveryMethod:

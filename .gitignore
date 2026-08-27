@@ -2,6 +2,9 @@
 .env
 *.env.local
 
+# SSH-ключи (приватные!) — никогда в репозиторий
+FoodPlovBotDSH*
+
 # Python
 __pycache__/
 *.py[cod]
