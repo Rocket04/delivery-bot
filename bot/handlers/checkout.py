@@ -1,5 +1,6 @@
 """Оформление заказа: FSM-диалог клиента (имя → телефон → способ → дата → время → сводка)."""
 
+import logging
 import re
 from datetime import date, datetime
 
@@ -41,6 +42,8 @@ from core.users import get_user_by_tg_id
 from core.validation import valid_address, valid_comment, valid_date_ddmm, valid_name, valid_phone, valid_time_hm
 
 router = Router(name="checkout")
+
+log = logging.getLogger(__name__)
 
 METHOD_RE = re.compile(r"^sel_method:(own|yandex|pickup)$")
 DATE_SEL_RE = re.compile(r"^sel_date:(0|1|2|custom)$")
@@ -268,21 +271,23 @@ async def on_comment(message: Message, state: FSMContext, session: AsyncSession)
         await message.answer(error)
         return
     await state.update_data(comment=comment)
-    await _ask_deposit(message, state, session)
+    user_id = await db_user_id(session, message.from_user.id)
+    await _ask_deposit(message, state, session, user_id)
 
 
 @router.callback_query(F.data == "checkout:skip_comment", StateFilter(CheckoutState.comment))
 async def cb_skip_comment(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     await callback.answer()
     await state.update_data(comment=None)
-    await _ask_deposit(callback.message, state, session)
+    user_id = await db_user_id(session, callback.from_user.id)
+    await _ask_deposit(callback.message, state, session, user_id)
 
 
-async def _ask_deposit(message: Message, state: FSMContext, session: AsyncSession) -> None:
+async def _ask_deposit(message: Message, state: FSMContext, session: AsyncSession, user_id: int) -> None:
     # страховка: корзина опустела во время диалога (например, заказ уже оформлен) —
     # сообщаем сразу, а не на сводке
-    user_id = await db_user_id(session, message.from_user.id)
     view = await get_cart_view(session, user_id)
+    log.info("ask_deposit user_id=%s rows=%d total=%s", user_id, len(view.rows), view.total)
     if not view.rows:
         await state.clear()
         kb = InlineKeyboardMarkup(
@@ -300,13 +305,15 @@ async def cb_deposit(callback: CallbackQuery, state: FSMContext, session: AsyncS
     await callback.answer()
     deposit = get_settings().dish_deposit_amount if callback.data == "checkout:deposit_yes" else 0
     await state.update_data(deposit=deposit)
-    await _show_summary(callback.message, state, session)
+    user_id = await db_user_id(session, callback.from_user.id)
+    await _show_summary(callback.message, state, session, user_id)
 
 
-async def _show_summary(message: Message, state: FSMContext, session: AsyncSession) -> None:
+async def _show_summary(message: Message, state: FSMContext, session: AsyncSession, user_id: int) -> None:
     data = await state.get_data()
-    user_id = await db_user_id(session, message.from_user.id)
     view = await get_cart_view(session, user_id)
+    log.info("show_summary user_id=%s rows=%d total=%s scheduled=%s",
+             user_id, len(view.rows), view.total, data.get("scheduled"))
     if not data.get("scheduled") or not view.rows:
         # пустая корзина / кнопки мёртвого диалога — объясняем и предлагаем выход
         kb = InlineKeyboardMarkup(
