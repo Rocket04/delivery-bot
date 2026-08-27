@@ -1,3 +1,5 @@
+from datetime import date
+
 from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -5,6 +7,8 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+WEEKDAYS = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
 
 
 def checkout_name_kb(saved_name: str) -> InlineKeyboardMarkup:
@@ -37,11 +41,14 @@ def checkout_method_kb() -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
-def checkout_date_kb() -> InlineKeyboardMarkup:
+def checkout_date_kb(days: list[date]) -> InlineKeyboardMarkup:
+    """Кнопки выбора дня: три ближайших возможных дня (первый — уже валидный по лиду)."""
     b = InlineKeyboardBuilder()
-    b.row(InlineKeyboardButton(text="Сегодня", callback_data="sel_date:0"))
-    b.row(InlineKeyboardButton(text="Завтра", callback_data="sel_date:1"))
-    b.row(InlineKeyboardButton(text="Послезавтра", callback_data="sel_date:2"))
+    for i, d in enumerate(days):
+        label = f"{d:%d.%m} ({WEEKDAYS[d.weekday()]})"
+        if d == date.today():
+            label = "Сегодня · " + label
+        b.row(InlineKeyboardButton(text=label, callback_data=f"sel_date:{i}"))
     b.row(InlineKeyboardButton(text="📅 Другая дата", callback_data="sel_date:custom"))
     return b.as_markup()
 

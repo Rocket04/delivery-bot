@@ -1,8 +1,7 @@
 """Оформление заказа: FSM-диалог клиента (имя → телефон → способ → дата → время → сводка)."""
 
 import re
-from datetime import date, datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import date, datetime
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
@@ -34,6 +33,8 @@ from core.ordering import (
     OrderError,
     build_scheduled,
     create_order,
+    earliest_allowed,
+    suggested_days,
     validate_schedule,
 )
 from core.users import get_user_by_tg_id
@@ -168,18 +169,16 @@ async def _ask_method(message: Message, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.regexp(METHOD_RE.pattern))
-async def cb_method(callback: CallbackQuery, state: FSMContext) -> None:
+async def cb_method(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     await callback.answer()
     method = callback.data.split(":")[1]
     await state.update_data(method=method)
     # снимаем reply-клавиатуру номера телефона, если осталась
     if method == DeliveryMethod.PICKUP:
         await state.update_data(address="Самовывоз: Рабочий переулок, 2а-1")
-        await callback.message.answer(
-            RU["checkout_pickup_note"] + "\n\n" + RU["checkout_date"],
-            reply_markup=ReplyKeyboardRemove(),
-        )
-        await callback.message.answer(RU["checkout_date"], reply_markup=checkout_date_kb())
+        days = await _date_days(session, callback.from_user.id)
+        await callback.message.answer(RU["checkout_pickup_note"], reply_markup=ReplyKeyboardRemove())
+        await callback.message.answer(RU["checkout_date"], reply_markup=checkout_date_kb(days))
     else:
         await state.set_state(CheckoutState.address)
         await callback.message.answer(
@@ -188,26 +187,35 @@ async def cb_method(callback: CallbackQuery, state: FSMContext) -> None:
         )
 
 
+async def _date_days(session: AsyncSession, tg_id: int) -> list[date]:
+    """Три ближайших дня, реально доступных для заказа (с учётом лида и корзины)."""
+    settings = get_settings()
+    user_id = await db_user_id(session, tg_id)
+    view = await get_cart_view(session, user_id)
+    return suggested_days(settings, view.total)
+
+
 @router.message(StateFilter(CheckoutState.address))
-async def on_address(message: Message, state: FSMContext) -> None:
+async def on_address(message: Message, state: FSMContext, session: AsyncSession) -> None:
     address, error = valid_address(message.text)
     if error:
         await message.answer(error)
         return
     await state.update_data(address=address)
-    await message.answer(RU["checkout_date"], reply_markup=checkout_date_kb())
+    days = await _date_days(session, message.from_user.id)
+    await message.answer(RU["checkout_date"], reply_markup=checkout_date_kb(days))
 
 
 @router.callback_query(F.data.regexp(DATE_SEL_RE.pattern))
-async def cb_date(callback: CallbackQuery, state: FSMContext) -> None:
+async def cb_date(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     await callback.answer()
     sel = callback.data.split(":")[1]
     if sel == "custom":
         await state.set_state(CheckoutState.date_custom)
         await callback.message.answer(RU["checkout_date_custom"])
         return
-    today = datetime.now(ZoneInfo(get_settings().app_tz)).date()
-    day = today + timedelta(days=int(sel))
+    days = await _date_days(session, callback.from_user.id)
+    day = days[int(sel)]
     await state.update_data(day=day.isoformat())
     await state.set_state(CheckoutState.time)
     await callback.message.answer(RU["checkout_time"])
@@ -241,6 +249,11 @@ async def on_time(message: Message, state: FSMContext, session: AsyncSession) ->
     error = validate_schedule(settings, view.total, scheduled)
     if error:
         hint = RU["lead_operator_hint"] if ("предзаказу" in error or "крупный" in error) else ""
+        if hint:
+            # показываем ближайшее реально доступное время — чтобы было ясно:
+            # ограничение по сроку предзаказа, а не «не принимаем заказы»
+            earliest = earliest_allowed(settings, view.total)
+            hint = f"\n🕐 Ближайшее доступное время: <b>{earliest:%d.%m %H:%M}</b>" + hint
         await message.answer(RU["checkout_time_error"].format(error=error, hint=hint))
         return
     await state.update_data(scheduled=scheduled.isoformat())

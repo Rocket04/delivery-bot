@@ -10,7 +10,9 @@ from core.ordering import (
     OrderError,
     build_scheduled,
     create_order,
+    earliest_allowed,
     get_order,
+    suggested_days,
     transition,
     validate_schedule,
 )
@@ -141,6 +143,31 @@ async def test_validate_schedule_rules():
     assert validate_schedule(s, 25_000, now - timedelta(minutes=10), now=now) is not None
     # время суток НЕ ограничено: хоть ночью, лишь бы лид соблюдён
     assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=3, minute=0), now=now) is None
+
+
+async def test_earliest_allowed_lead():
+    s = _settings()
+    now = datetime(2026, 6, 1, 12, 0, tzinfo=ZoneInfo(TZ))
+    # обычный заказ — лид 24 ч, крупный — 48 ч
+    assert earliest_allowed(s, 25_000, now=now) == now + timedelta(hours=24)
+    assert earliest_allowed(s, 61_000, now=now) == now + timedelta(hours=48)
+
+
+async def test_suggested_days_starts_from_valid_day():
+    s = _settings()
+    now = datetime(2026, 6, 1, 23, 50, tzinfo=ZoneInfo(TZ))  # поздний вечер
+    # лид заканчивается 02.06 23:50 — после полудня → первый день 03.06
+    days = suggested_days(s, 25_000, now=now)
+    assert len(days) == 3
+    assert days[0].isoformat() == "2026-06-03"
+    assert days[1].isoformat() == "2026-06-04"
+    assert days[2].isoformat() == "2026-06-05"
+    # крупный заказ — лид 48 ч → первый день сдвигается ещё дальше
+    big = suggested_days(s, 61_000, now=now)
+    assert big[0].isoformat() == "2026-06-04"
+    # а если лид заканчивается в первой половине дня — этот же день подходит
+    early = datetime(2026, 6, 1, 10, 0, tzinfo=ZoneInfo(TZ))
+    assert suggested_days(s, 25_000, now=early)[0].isoformat() == "2026-06-02"
 
 
 async def test_transitions_state_machine(db_session):

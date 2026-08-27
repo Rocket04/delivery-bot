@@ -4,7 +4,7 @@
 (pомечено на i18n на стадии 5).
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -81,6 +81,29 @@ def validate_schedule(
             hours = settings.default_lead_minutes // 60
             return f"👨🍳 Мы готовим по предзаказу — выбери время минимум за {hours} часа (сутки)."
     return None
+
+
+def earliest_allowed(settings: Settings, total: int, now: datetime | None = None) -> datetime:
+    """Ближайший момент, на который реально принять заказ (с учётом лида 24/48 ч)."""
+    now = now or _local_now(settings)
+    if total >= settings.large_order_threshold:
+        return now + timedelta(hours=settings.large_order_lead_hours)
+    return now + timedelta(minutes=settings.default_lead_minutes)
+
+
+def suggested_days(settings: Settings, total: int, now: datetime | None = None) -> list[date]:
+    """Три ближайших дня для кнопок выбора даты.
+
+    Первый день — первый день, в который заказ реально возможен: если лид
+    заканчивается не позже полудня, этот же день подходит (почти весь доступен);
+    иначе стартуем со следующего дня, чтобы не давать день, где почти все часы
+    отклонятся валидацией.
+    """
+    earliest = earliest_allowed(settings, total, now)
+    first = earliest.date()
+    if earliest.time() > datetime.min.time().replace(hour=12):
+        first += timedelta(days=1)
+    return [first + timedelta(days=i) for i in range(3)]
 
 
 def format_money(n: int) -> str:
