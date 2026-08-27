@@ -27,10 +27,9 @@ def _settings(**kw) -> Settings:
         min_order_amount=20_000,
         prepay_percent=50,
         large_order_threshold=60_000,
-        large_order_lead_hours=24,
-        default_lead_minutes=120,
-        work_start_hour=10,
-        work_end_hour=20,
+        default_lead_minutes=60 * 24,
+        large_order_lead_hours=48,
+        dish_deposit_amount=10_000,
         app_tz=TZ,
     )
     defaults.update(kw)
@@ -131,19 +130,17 @@ async def test_create_order_blocks_unavailable(db_session):
 async def test_validate_schedule_rules():
     s = _settings()
     now = datetime(2026, 6, 1, 12, 0, tzinfo=ZoneInfo(TZ))  # полдень — детерминированно
-    # вечером после 20:00 — ошибка
-    evening = now.replace(hour=21, minute=0) + timedelta(days=1)
-    assert validate_schedule(s, 25_000, evening, now=now) is not None
-    # обычный предзаказ: +1.5ч — ошибка, +3ч — ок
+    # обычный предзаказ: минимум сутки — +90 мин и +3 ч — ошибка, +25 ч — ок
     assert validate_schedule(s, 25_000, now + timedelta(minutes=90), now=now) is not None
-    assert validate_schedule(s, 25_000, now + timedelta(minutes=180), now=now) is None
-    # крупный (≥60к): +23ч — ошибка, +25ч — ок
-    assert validate_schedule(s, 61_000, now + timedelta(hours=23), now=now) is not None
-    assert validate_schedule(s, 61_000, now + timedelta(hours=25), now=now) is None
+    assert validate_schedule(s, 25_000, now + timedelta(minutes=180), now=now) is not None
+    assert validate_schedule(s, 25_000, now + timedelta(hours=25), now=now) is None
+    # крупный (≥60к): +47 ч — ошибка, +49 ч — ок
+    assert validate_schedule(s, 61_000, now + timedelta(hours=47), now=now) is not None
+    assert validate_schedule(s, 61_000, now + timedelta(hours=49), now=now) is None
     # прошлое время
     assert validate_schedule(s, 25_000, now - timedelta(minutes=10), now=now) is not None
-    # ровно в 10:00 — допустимо
-    assert validate_schedule(s, 25_000, now.replace(hour=10, minute=0) + timedelta(days=1), now=now) is None
+    # время суток НЕ ограничено: хоть ночью, лишь бы лид соблюдён
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=3, minute=0), now=now) is None
 
 
 async def test_transitions_state_machine(db_session):

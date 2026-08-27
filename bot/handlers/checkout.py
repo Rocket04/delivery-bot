@@ -16,6 +16,7 @@ from bot.keyboards.cart import cart_empty_kb
 from bot.keyboards.checkout import (
     checkout_comment_kb,
     checkout_date_kb,
+    checkout_deposit_kb,
     checkout_method_kb,
     checkout_summary_kb,
 )
@@ -49,6 +50,7 @@ class CheckoutState(StatesGroup):
     date_custom = State()
     time = State()
     comment = State()
+    deposit = State()
 
 
 async def _cart_report(session: AsyncSession, user_id: int) -> str | None:
@@ -193,13 +195,27 @@ async def on_comment(message: Message, state: FSMContext) -> None:
         await message.answer(error)
         return
     await state.update_data(comment=comment)
-    await _show_summary(message, state)
+    await _ask_deposit(message, state)
 
 
 @router.callback_query(F.data == "checkout:skip_comment")
-async def cb_skip_comment(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
+async def cb_skip_comment(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     await state.update_data(comment=None)
+    await _ask_deposit(callback.message, state)
+
+
+async def _ask_deposit(message: Message, state: FSMContext) -> None:
+    deposit_text = RU["checkout_deposit"].format(amount=fmt_price(get_settings().dish_deposit_amount))
+    await state.set_state(CheckoutState.deposit)
+    await message.answer(deposit_text, reply_markup=checkout_deposit_kb())
+
+
+@router.callback_query(F.data.in_({"checkout:deposit_yes", "checkout:deposit_no"}))
+async def cb_deposit(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
+    await callback.answer()
+    deposit = get_settings().dish_deposit_amount if callback.data == "checkout:deposit_yes" else 0
+    await state.update_data(deposit=deposit)
     await _show_summary(callback.message, state, session)
 
 
@@ -219,6 +235,8 @@ async def _show_summary(message: Message, state: FSMContext, session: AsyncSessi
         lines.append(f"📍 {data['address']}")
     if data.get("comment"):
         lines.append(f"📝 {data['comment']}")
+    if data.get("deposit"):
+        lines.append(f"🍽 Восточная посуда — залог {fmt_price(data['deposit'])} (возвратный)")
     lines.append("")
     lines.append("————————————")
     lines.extend(
@@ -256,6 +274,7 @@ async def cb_confirm(callback: CallbackQuery, session: AsyncSession, state: FSMC
             address=data["address"],
             scheduled_for=datetime.fromisoformat(data["scheduled"]),
             comment=data.get("comment"),
+            deposit=data.get("deposit", 0),
         )
     except OrderError as exc:
         await callback.message.answer(RU["checkout_error"].format(error=str(exc)))

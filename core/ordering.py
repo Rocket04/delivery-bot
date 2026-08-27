@@ -59,31 +59,27 @@ def validate_schedule(
     now: datetime | None = None,
 ) -> str | None:
     """Возвращает текст ошибки или None, если время допустимо.
+    Бизнес: приём 24/7, готовим по предзаказу — минимум за сутки (24 ч),
+    крупные заказы — минимум за large_order_lead_hours (48 ч по умолчанию).
     now — для тестов; по умолчанию текущее время в tz бизнеса."""
     now = now or _local_now(settings)
     if scheduled_for.tzinfo is None:
         scheduled_for = scheduled_for.replace(tzinfo=ZoneInfo(settings.app_tz))
     if scheduled_for <= now:
         return "⏰ Это время уже прошло — выбери более позднее."
-    if not (settings.work_start_hour <= scheduled_for.hour < settings.work_end_hour):
-        return f"🕐 Мы работаем с {settings.work_start_hour:02d}:00 до {settings.work_end_hour:02d}:00 — выбери время в этом окне."
     if total >= settings.large_order_threshold:
         lead = timedelta(hours=settings.large_order_lead_hours)
         if scheduled_for - now < lead:
             return (
                 f"📦 Это крупный заказ (от {settings.large_order_threshold:,} ₸) — "
-                f"мы готовим его минимум за {settings.large_order_lead_hours} часа, "
+                f"мы принимаем его минимум за {settings.large_order_lead_hours} часа, "
                 "чтобы успеть закупить продукты. Выбери время позже."
             )
     else:
         lead = timedelta(minutes=settings.default_lead_minutes)
         if scheduled_for - now < lead:
-            minutes = settings.default_lead_minutes
-            hours = minutes // 60
-            return (
-                f"👨🍳 Мы готовим по предзаказу — выбери время минимум через "
-                f"{hours} ч {minutes % 60:02d} мин."
-            )
+            hours = settings.default_lead_minutes // 60
+            return f"👨🍳 Мы готовим по предзаказу — выбери время минимум за {hours} часа (сутки)."
     return None
 
 
@@ -111,6 +107,8 @@ def order_summary_text(order: Order, items: list[OrderItem]) -> str:
     )
     if order.delivery_price:
         lines.append(f"Доставка — {format_money(order.delivery_price)}")
+    if order.deposit:
+        lines.append(f"🍽 Восточная посуда — залог {format_money(order.deposit)} (возвратный)")
     lines.append("————————————")
     lines.append(f"<b>Сумма: {format_money(order.total)}</b>")
     lines.append(f"💳 Предоплата 50%: <b>{format_money(order.prepay_amount)}</b>")
@@ -128,6 +126,7 @@ async def create_order(
     address: str | None,
     scheduled_for: datetime,
     comment: str | None,
+    deposit: int = 0,
 ) -> Order:
     """Создаёт заказ из корзины одной транзакцией. Очищает корзину."""
     view = await get_cart_view(session, user_id)
@@ -166,6 +165,7 @@ async def create_order(
         payment_status=PaymentStatus.NONE,
         payment_details=None,
         receipt_photo_file_id=None,
+        deposit=deposit,
     )
     session.add(order)
     await session.flush()

@@ -25,6 +25,13 @@ def checkout_comment_kb() -> InlineKeyboardMarkup:
     return b.as_markup()
 
 
+def checkout_deposit_kb() -> InlineKeyboardMarkup:
+    b = InlineKeyboardBuilder()
+    b.row(InlineKeyboardButton(text="🍽 Да, добавьте (залог 10 000 ₸)", callback_data="checkout:deposit_yes"))
+    b.row(InlineKeyboardButton(text="Нет, спасибо", callback_data="checkout:deposit_no"))
+    return b.as_markup()
+
+
 def checkout_summary_kb() -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
     b.row(InlineKeyboardButton(text="✅ Подтвердить и отправить", callback_data="checkout:confirm"))

@@ -29,10 +29,9 @@ class Settings(BaseSettings):
     min_order_amount: int = 20_000  # мин. заказ, тенге
     prepay_percent: int = 50  # предоплата, %
     large_order_threshold: int = 60_000  # заказ от этой суммы считается «крупным»
-    large_order_lead_hours: int = 24  # крупный заказ — минимум за это время
-    default_lead_minutes: int = 120  # обычный предзаказ — минимум за это время
-    work_start_hour: int = 10  # часы работы
-    work_end_hour: int = 20
+    default_lead_minutes: int = 60 * 24  # обычный предзаказ — минимум за это время (сутки)
+    large_order_lead_hours: int = 48  # крупный заказ — минимум за это время
+    dish_deposit_amount: int = 10_000  # залог за восточную посуду (возвратный), тенге
     app_tz: str = "Asia/Almaty"  # часовой пояс бизнеса
 
     @property

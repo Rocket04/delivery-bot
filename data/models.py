@@ -113,6 +113,7 @@ class Order(Base):
     payment_status: Mapped[str] = mapped_column(String(16), default=PaymentStatus.NONE)
     payment_details: Mapped[str | None] = mapped_column(Text)  # что отправлено клиенту: ссылка/номер
     receipt_photo_file_id: Mapped[str | None] = mapped_column(String(255))  # чек от клиента
+    deposit: Mapped[int] = mapped_column(Integer, default=0)  # залог за восточную посуду (возвратный)
 
     # Прочее
     prep_site: Mapped[str | None] = mapped_column(String(16))  # PrepSite: где готовят
