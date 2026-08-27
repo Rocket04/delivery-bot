@@ -247,6 +247,10 @@ async def _show_summary(message: Message, state: FSMContext, session: AsyncSessi
 async def cb_confirm(callback: CallbackQuery, session: AsyncSession, state: FSMContext) -> None:
     await callback.answer()
     data = await state.get_data()
+    # защита от двойного клика: первый confirm уже завершил оформление
+    if not data.get("scheduled"):
+        await callback.message.answer(RU["checkout_created_already"])
+        return
     settings = get_settings()
     user_id = await db_user_id(session, callback.from_user.id)
     try:

@@ -1,5 +1,6 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.keyboards.main import main_keyboard
@@ -17,6 +18,15 @@ async def cmd_start(message: Message) -> None:
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
     await message.answer(RU["help"])
+
+
+@router.message(Command("cancel"))
+async def cmd_cancel(message: Message, state: FSMContext) -> None:
+    """Прерывает незавершённый диалог (оформление заказа, админка, оператор)."""
+    if await state.get_state() is None:
+        return
+    await state.clear()
+    await message.answer(RU["cancel"], reply_markup=main_keyboard())
 
 
 @router.message(Command("chatid"))

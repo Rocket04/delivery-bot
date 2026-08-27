@@ -1,4 +1,4 @@
-from core.cart import change_quantity, clear_cart, get_cart_view
+from core.cart import MAX_QTY, change_quantity, clear_cart, get_cart_view
 from core.catalog import get_product, list_active_categories, list_available_products
 from data.models import Category, Product
 
@@ -48,6 +48,14 @@ async def test_cart_view_total_excludes_unavailable(db_session):
     assert view.unavailable_total == 100
     assert len(view.rows) == 3
     assert view.rows[2].available is False
+
+
+async def test_cart_quantity_capped(db_session):
+    cid, p1, p2, p3 = await _seed(db_session)
+    for _ in range(MAX_QTY + 5):
+        await change_quantity(db_session, 1, p1, 1)
+    view = await get_cart_view(db_session, 1)
+    assert view.rows[0].quantity == MAX_QTY
 
 
 async def test_cart_clear(db_session):
