@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.keyboards.adm import (
     adm_cat_kb,
     adm_cats_kb,
+    adm_help_kb,
     adm_main_kb,
     adm_prod_kb,
     adm_products_kb,
@@ -74,8 +75,7 @@ async def _adm_check(obj: Message | CallbackQuery) -> bool:
     return True
 
 
-def _cat_view_text(category: Category) -> str:
-    count = len(category.products) if category.products else "—"
+def _cat_view_text(category: Category, count: int) -> str:
     hidden = "" if category.is_active else "\n🚫 Скрыта — клиенты её не видят"
     return RU["admin_cat_view"].format(name=category.name, hidden=hidden, count=count)
 
@@ -155,7 +155,7 @@ async def adm_cat_view(callback: CallbackQuery, state: FSMContext, session: Asyn
         return
     count = await session.scalar(select(func.count(Product.id)).where(Product.category_id == category.id))
     kb = adm_cat_kb(category.id, can_delete=not count)
-    await callback.message.answer(_cat_view_text(category), reply_markup=kb)
+    await callback.message.answer(_cat_view_text(category, count), reply_markup=kb)
 
 
 @router.callback_query(F.data == "adm:cat_new")
@@ -176,7 +176,7 @@ async def adm_cat_new_name(message: Message, session: AsyncSession, state: FSMCo
     await state.clear()
     await message.answer(RU["admin_ok"].format(what=f"Категория «{category.name}» создана"))
     count = await session.scalar(select(func.count(Product.id)).where(Product.category_id == category.id))
-    await message.answer(_cat_view_text(category), reply_markup=adm_cat_kb(category.id, can_delete=not count))
+    await message.answer(_cat_view_text(category, count), reply_markup=adm_cat_kb(category.id, can_delete=not count))
 
 
 @router.callback_query(F.data.regexp(CAT_RENAME_RE.pattern))
