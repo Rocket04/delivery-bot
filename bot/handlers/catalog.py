@@ -10,7 +10,13 @@ from bot.keyboards.catalog import categories_kb, product_card_kb, products_kb
 from bot.texts import RU, fmt_price
 from bot.utils import edit_or_answer
 from core.cart import cart_qty, change_quantity
-from core.catalog import get_category, get_product, list_active_categories, list_available_products
+from core.catalog import (
+    get_category,
+    get_product,
+    list_active_categories,
+    list_available_products,
+    product_weight_label,
+)
 from core.users import get_user_by_tg_id
 from data.models import Product
 
@@ -86,6 +92,16 @@ async def cb_categories(callback: CallbackQuery, session: AsyncSession) -> None:
     await _show_categories(callback.message, session)
 
 
+def _category_list_text(products: list[Product]) -> str:
+    """Нумерованный список: название, граммовка (из описания), цена — всё в тексте, ничего не обрезается."""
+    lines = []
+    for i, p in enumerate(products, 1):
+        weight = product_weight_label(p.name, p.description)
+        suffix = f" ({weight})" if weight else ""
+        lines.append(f"{i}. {p.name}{suffix} — {fmt_price(p.price)}")
+    return "\n".join(lines)
+
+
 @router.callback_query(F.data.regexp(r"^cat:\d+$"))
 async def cb_category(callback: CallbackQuery, session: AsyncSession) -> None:
     await callback.answer()
@@ -95,7 +111,8 @@ async def cb_category(callback: CallbackQuery, session: AsyncSession) -> None:
         await _show_categories(callback.message, session)
         return
     products = await list_available_products(session, category.id)
-    title = RU["category_title"].format(name=category.name)
+    body = _category_list_text(products)
+    title = f"🍛 <b>{category.name}</b>\n\n{body}"
     if not products:
         await edit_or_answer(callback.message, RU["category_empty"], products_kb([], category.id))
         return

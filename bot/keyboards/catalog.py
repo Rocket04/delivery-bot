@@ -13,9 +13,13 @@ def categories_kb(categories: list[Category]) -> InlineKeyboardMarkup:
 
 
 def products_kb(products: list[Product], category_id: int) -> InlineKeyboardMarkup:
+    """Кнопки-номера: короткие, чтобы длинные названия не прятали цену из текста."""
     b = InlineKeyboardBuilder()
-    for p in products:
-        b.row(InlineKeyboardButton(text=f"{p.name} — {fmt_price(p.price)}", callback_data=f"prod:{p.id}"))
+    for i, p in enumerate(products, 1):
+        label = f"{i}. {p.name}"
+        if len(label) > 32:
+            label = label[:31] + "…"
+        b.row(InlineKeyboardButton(text=label, callback_data=f"prod:{p.id}"))
     b.row(InlineKeyboardButton(text="⬅️ Назад", callback_data="cat:open"))
     return b.as_markup()
 

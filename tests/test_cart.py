@@ -1,5 +1,11 @@
 from core.cart import MAX_QTY, change_quantity, clear_cart, get_cart_view
-from core.catalog import get_product, list_active_categories, list_available_products
+from core.catalog import (
+    extract_weight,
+    get_product,
+    list_active_categories,
+    list_available_products,
+    product_weight_label,
+)
 from data.models import Category, Product
 
 
@@ -22,6 +28,23 @@ async def test_catalog_lists_only_available(db_session):
     products = await list_available_products(db_session, cid)
     assert [p.id for p in products] == [p1, p2]
     assert (await get_product(db_session, p3)).is_available is False
+
+
+def test_extract_weight_from_description():
+    assert extract_weight("помидоры, лук и специи, 0,5 кг") == "0,5 кг"
+    assert extract_weight("Лёгкий овощной салат, 0.5 кг") == "0,5 кг"
+    assert extract_weight("500 г") == "500 г"
+    assert extract_weight("10-12 шт") == "10-12 шт"
+    assert extract_weight("только овощи") is None
+    assert extract_weight(None) is None
+
+
+def test_product_weight_label_no_duplicate():
+    # вес и так в названии — суффикс из описания не нужен
+    assert product_weight_label("Плов Ханский (3 кг)", "плова, 3 кг") is None
+    # вес только в описании — показываем
+    assert product_weight_label("Цезарь", "Курица, соус, сухарики 0,5 кг") == "0,5 кг"
+    assert product_weight_label("Ачучук", None) is None
 
 
 async def test_cart_add_decrement_remove(db_session):
