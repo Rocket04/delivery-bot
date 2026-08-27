@@ -1,6 +1,7 @@
 """Отправка заказов в группу операторов и обновление карточки заказа."""
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,6 +51,22 @@ async def update_order_card(
     chat_id: int,
     message_id: int,
 ) -> None:
-    """Перерисовывает карточку заказа в группе после смены статуса."""
+    """Перерисовывает карточку заказа в группе после смены статуса.
+
+    Карточка может быть текстовым сообщением или фото (чек клиента) —
+    для фото правим caption, а не text.
+    """
     items = await get_order_items(session, order.id)
-    await bot.edit_message_text(order_card_text(order, items), chat_id=chat_id, message_id=message_id, reply_markup=operator_kb(order))
+    text = order_card_text(order, items)
+    kb = operator_kb(order)
+    try:
+        await bot.edit_message_text(text, chat_id=chat_id, message_id=message_id, reply_markup=kb)
+    except TelegramBadRequest as exc:
+        msg = str(exc)
+        if "there is no text" in msg:
+            # сообщение-фото: у него есть caption, а не text
+            await bot.edit_message_caption(chat_id=chat_id, message_id=message_id, caption=text, reply_markup=kb)
+            return
+        if "message is not modified" in msg:
+            return  # повторный клик по той же кнопке — не ошибка
+        raise
