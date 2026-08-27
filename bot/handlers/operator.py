@@ -48,10 +48,15 @@ class OpState(StatesGroup):
 
 
 async def _op_check(callback: CallbackQuery) -> bool:
-    """Кнопки оператора работают только в группе операторов."""
+    """Кнопки оператора работают только в группе операторов и только у операторов/админов."""
     settings = get_settings()
+    user_id = callback.from_user.id
+    allowed = set(settings.admin_id_list) | set(settings.operator_id_list)
     if not settings.operator_chat_id or callback.message.chat.id != settings.operator_chat_id:
         await callback.answer(RU["op_chat_only"], show_alert=True)
+        return False
+    if user_id not in allowed:
+        await callback.answer(RU["op_user_only"], show_alert=True)
         return False
     await callback.answer()
     return True

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     bot_token: str = ""
     admin_ids: str = ""  # через запятую: 123,456
     operator_chat_id: int | None = None  # группа операторов (стадия 3)
+    operator_ids: str = ""  # через запятую: кто может работать кнопками в группе операторов
 
     @field_validator("operator_chat_id", mode="before")
     @classmethod
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
     @property
     def admin_id_list(self) -> list[int]:
         return [int(x.strip()) for x in self.admin_ids.split(",") if x.strip()]
+
+    @property
+    def operator_id_list(self) -> list[int]:
+        return [int(x.strip()) for x in self.operator_ids.split(",") if x.strip()]
 
 
 @lru_cache
