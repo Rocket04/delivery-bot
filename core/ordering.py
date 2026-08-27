@@ -74,6 +74,17 @@ def validate_schedule(
         scheduled_for = scheduled_for.replace(tzinfo=ZoneInfo(settings.app_tz))
     if scheduled_for <= now:
         return "⏰ Это время уже прошло — выбери более позднее."
+    # Ночью не готовим: время доставки должно попадать в окно [delivery_start_hour, delivery_end_hour]
+    minutes = scheduled_for.hour * 60 + scheduled_for.minute
+    start = settings.delivery_start_hour
+    end = settings.delivery_end_hour
+    if minutes < start * 60:
+        return (
+            f"🌅 Мы готовим с {start:02d}:00 — выбери время не раньше утра. "
+            f"Ночью кухня не работает."
+        )
+    if minutes > end * 60:
+        return f"🌙 Мы готовим до {end:02d}:00 — ночью кухня не работает. Выбери более раннее время."
     if total >= settings.large_order_threshold:
         lead = timedelta(hours=settings.large_order_lead_hours)
         if scheduled_for - now < lead:

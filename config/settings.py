@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     dish_deposit_amount: int = 10_000  # залог за восточную посуду (возвратный), тенге
     app_tz: str = "Asia/Almaty"  # часовой пояс бизнеса
 
+    # --- Окно приготовления (время ДОСТАВКИ должно попадать в него — ночью не готовим) ---
+    delivery_start_hour: int = 8  # env: DELIVERY_START_HOUR — с какого часа принимаем время
+    delivery_end_hour: int = 23  # env: DELIVERY_END_HOUR — до какого часа (включительно)
+
     @property
     def admin_id_list(self) -> list[int]:
         return [int(x.strip()) for x in self.admin_ids.split(",") if x.strip()]

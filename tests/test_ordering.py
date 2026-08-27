@@ -141,8 +141,12 @@ async def test_validate_schedule_rules():
     assert validate_schedule(s, 61_000, now + timedelta(hours=49), now=now) is None
     # прошлое время
     assert validate_schedule(s, 25_000, now - timedelta(minutes=10), now=now) is not None
-    # время суток НЕ ограничено: хоть ночью, лишь бы лид соблюдён
-    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=3, minute=0), now=now) is None
+    # ночью не готовим: время вне окна 08:00–23:00 отклоняется даже при соблюдённом лиде
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=3, minute=0), now=now) is not None
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=7, minute=59), now=now) is not None
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=8, minute=0), now=now) is None
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=23, minute=0), now=now) is None
+    assert validate_schedule(s, 25_000, (now + timedelta(days=2)).replace(hour=23, minute=1), now=now) is not None
 
 
 async def test_earliest_allowed_lead():
