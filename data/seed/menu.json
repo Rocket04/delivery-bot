@@ -1,0 +1,867 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "name": "Горячие блюда",
+      "sort_order": 0,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Плов Факирский (3 кг)",
+          "description": "фирменный, 3 кг",
+          "price": 15300,
+          "photo_file_id": "AgACAgIAAxkDAAIC_GqQftnCHzxyVuKxODV_xbc0ARX0AAJfJWsbsEaBSO3J5Murl3hyAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Плов Праздничный (3 кг)",
+          "description": "3 кг",
+          "price": 17550,
+          "photo_file_id": "AgACAgIAAxkDAAIC_WqQfttcEQQnfam9ObDcjJRSavnBAAJhJWsbsEaBSKsnZNIOsRAXAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Плов из утки (3 кг)",
+          "description": "3 кг",
+          "price": 17000,
+          "photo_file_id": "AgACAgIAAxkDAAIC_mqQftsaMKI7QA0L9W6YjSUmdEaxAAJiJWsbsEaBSNDhVkZxWnO0AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Плов Ханский (3 кг)",
+          "description": "3 кг",
+          "price": 19800,
+          "photo_file_id": "AgACAgIAAxkDAAIC_2qQftzHtdby9WutqLwwgEFyJMecAAJjJWsbsEaBSIHHxO7LNa_XAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Плов по-татарски (3 кг)",
+          "description": "с куриными бедрами, 3 кг",
+          "price": 19500,
+          "photo_file_id": "AgACAgIAAxkDAAIDAAFqkH7e_49SP0Y5L4MIDM2fCpwAAewAAmQlaxuwRoFIFLLskx2vsywBAAMCAAN5AAM9BA",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Плов с двойным мясом (3 кг)",
+          "description": "3 кг",
+          "price": 22000,
+          "photo_file_id": "AgACAgIAAxkDAAIDAWqQft-ZV9k1m-04M4f8qFejEp0iAAJlJWsbsEaBSFm6Wk3ebSPbAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Вегетарианский плов с грибами (3 кг)",
+          "description": "3 кг",
+          "price": 17500,
+          "photo_file_id": "AgACAgIAAxkDAAIDAmqQft9awJPCTBI3P5Aucn0L_Xl1AAJmJWsbsEaBSN-R0RcuZEprAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Сирне (5 кг)",
+          "description": "5 кг",
+          "price": 39500,
+          "photo_file_id": "AgACAgIAAxkDAAIDA2qQfuFo0PptPDBw_X4SP67acfHtAAJnJWsbsEaBSLs-9c1bZDo8AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        },
+        {
+          "name": "Бешпармак (5 кг)",
+          "description": "5 кг",
+          "price": 39500,
+          "photo_file_id": "AgACAgIAAxkDAAIDBGqQfuLHWLfemMrR3xLy45wOi_j3AAJoJWsbsEaBSNmeNsOKjf1yAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 8
+        },
+        {
+          "name": "Казан Кебаб с говяжьими ребрами (4 кг)",
+          "description": "4 кг",
+          "price": 26900,
+          "photo_file_id": "AgACAgIAAxkDAAIDBWqQfuPg5_jOZjueWZvO2l4Pm0NLAAJqJWsbsEaBSLhfr1hyFGRgAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 9
+        },
+        {
+          "name": "Казан Кебаб с куриными бедрышками (4 кг)",
+          "description": "4 кг",
+          "price": 24900,
+          "photo_file_id": "AgACAgIAAxkDAAIDBmqQfuQIc_ftQd3JWlW8J7ZfeaUMAAJrJWsbsEaBSOYvP2Tpf9TEAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 10
+        },
+        {
+          "name": "Казан Кебаб с мясом и овощами (3 кг)",
+          "description": "3 кг",
+          "price": 22900,
+          "photo_file_id": "AgACAgIAAxkDAAIDB2qQfuaDoAQyK-Dq6gpWCQWrTUarAAJtJWsbsEaBSLpkPfP-qN9wAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 11
+        },
+        {
+          "name": "Куырдак фирменный (4 кг)",
+          "description": "4 кг",
+          "price": 26900,
+          "photo_file_id": "AgACAgIAAxkDAAIDCGqQfudzuR6jvqo04Bg30OecZ0FQAAJuJWsbsEaBSBCyreVg11JSAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 12
+        },
+        {
+          "name": "Дамляма (3 кг)",
+          "description": "3 кг",
+          "price": 24900,
+          "photo_file_id": "AgACAgIAAxkDAAIDCWqQfuhF5B3J2MVozG0Xd7B88rREAAJwJWsbsEaBSJxdDM-ePLWsAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 13
+        },
+        {
+          "name": "Манты с говядиной/кониной (50 шт)",
+          "description": "50 шт",
+          "price": 19500,
+          "photo_file_id": "AgACAgIAAxkDAAIDCmqQfunh32lHFNxy9g-Jqun_61SpAAJyJWsbsEaBSHIs4t02f4d0AQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 14
+        },
+        {
+          "name": "Манты с говядиной/кониной и тыквой (50 шт)",
+          "description": "50 шт",
+          "price": 19500,
+          "photo_file_id": "AgACAgIAAxkDAAIDC2qQfuoAAeA0c6HBt_dRcmHpCZxrvgACcyVrG7BGgUhmTgjJv63qAwEAAwIAA3gAAz0E",
+          "is_available": true,
+          "sort_order": 15
+        },
+        {
+          "name": "Манты с говядиной/кониной и картофелем (50 шт)",
+          "description": "50шт",
+          "price": 19500,
+          "photo_file_id": "AgACAgIAAxkDAAIDDGqQfuvw5nx0_KCRj-_uWWHgdywiAAJ0JWsbsEaBSDJmdeZhsFE0AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 16
+        },
+        {
+          "name": "Манты с говядиной/кониной рубленные (50 шт)",
+          "description": "50 шт",
+          "price": 23900,
+          "photo_file_id": "AgACAgIAAxkDAAIDDWqQfuyP4yoeNzja298RjV13c2rtAAJ2JWsbsEaBSAuZrq-av0OkAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 17
+        }
+      ]
+    },
+    {
+      "name": "Салаты",
+      "sort_order": 1,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Ачучук",
+          "description": "помидоры, лук и ароматные специи, 0,5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDDmqQfuzttQbwRpELOgXtQdYpgHJdAAJ3JWsbsEaBSJabA3l08obkAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Летний",
+          "description": "Лёгкий овощной салат, 0.5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDD2qQfu0PLO0lXQdo2Ei0xbeoSzOtAAJ5JWsbsEaBSOZ-0WhsobRoAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Морковь по-корейски",
+          "description": "пряная, но не острая, 0.5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDEGqQfu6Xpc6XBTgzGYoxdUPtyYfPAAJ6JWsbsEaBSC5BuX246UijAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Огурцы малосольные с зеленью",
+          "description": "0.5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDEWqQfu-XmuS8O3_zp51RRhHfH9LRAAJ8JWsbsEaBSP7nzjEcDBpBAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Битые огурцы",
+          "description": "Ароматные специи, легкий соус, 0.5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDEmqQfvD6krEULLSLrifbRfUIFdxQAAJ-JWsbsEaBSNX4Ud3PeJh2AQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Капуста по-корейски",
+          "description": "Слегка пряная, без остроты, 0,5 кг",
+          "price": 2600,
+          "photo_file_id": "AgACAgIAAxkDAAIDE2qQfvAEKjoPhevaOhBd3aNGdQl8AAKAJWsbsEaBSLFDk7Uc_8zVAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Греческий",
+          "description": "Овощи, фета и оливки. 0,5 кг",
+          "price": 3600,
+          "photo_file_id": "AgACAgIAAxkDAAIDFGqQfvHprS9jFr9yrXyoKAXF6YlXAAKBJWsbsEaBSJUFsmqbx0lTAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Фирменный",
+          "description": "Слоенный салат с куриной грудкой, яйцом, овощами и фирменным соусом. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDFWqQfvIC4Ttr13wo1FRA5DbNiGiXAAKCJWsbsEaBSOKlOFqSbUlPAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        },
+        {
+          "name": "Оливье",
+          "description": "Классический вариант. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDFmqQfvMhE0PqB14YjNtIl5tV5RN-AAKDJWsbsEaBSGz4cWmM-qvGAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 8
+        },
+        {
+          "name": "Сельдь под шубой",
+          "description": "Классический рецепт. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDF2qQfvRA-ukSw7Cl7xg_M2ndgLOrAAKEJWsbsEaBSD6sAYRzFcFpAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 9
+        },
+        {
+          "name": "Жаренные баклажаны",
+          "description": "Жаренные баклажаны, овощи и специи. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDGGqQfvU9xLKskJogPayO8ba8KArAAAKFJWsbsEaBSE7nO9SkgyI3AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 10
+        },
+        {
+          "name": "С шампиньонами и сердечками",
+          "description": "Тёплый салат с грибами, куриными сердечками и сырным соусом. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDGWqQfvZtG1EjH2AEla89PLdtdTreAAKGJWsbsEaBSFFeGHZAKneFAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 11
+        },
+        {
+          "name": "Цезарь",
+          "description": "Курица, соус, сухарики 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDGmqQfvd_XznZbn4we9Qt_kG2nbaPAAKHJWsbsEaBSAukA5HNyrTOAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 12
+        },
+        {
+          "name": "Бурбон",
+          "description": "Виноград, куриная грудка, грецкие орехи и соус. 0,5 кг",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDG2qQfvdNJxZGiSQzR8MS3DerCEAjAAKIJWsbsEaBSELruovgUavhAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 13
+        },
+        {
+          "name": "Теплый салат",
+          "description": "Курица, мясо, овощи в легком соевом соусе 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDHGqQfviBu1vDf1QX-vg8O6LoPZcuAAKJJWsbsEaBSJWrHsVK6RGtAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 14
+        },
+        {
+          "name": "Восточный салат",
+          "description": "Говядина с овощами в пикантных специях и соевом соусе. 0,5 кг",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDHWqQfvlLlCEBOMHWLFNg1iUzBMorAAKKJWsbsEaBSPF-iGGQm6H3AQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 15
+        },
+        {
+          "name": "С пекинской капустой и курицей",
+          "description": "Овощи, курица, легкий соус. 0,5 кг",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDHmqQfvpyTghzJ7OEfr7WZH2Or_MzAAKLJWsbsEaBSOoZig22tXKsAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 16
+        },
+        {
+          "name": "Гавайский с ананасом",
+          "description": "Куриная грудка, ананас, овощи. 0,5 кг",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDH2qQfvs6ggEeW4HeVOk3DotAdPvBAAKMJWsbsEaBSCbqQvA-GePXAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 17
+        },
+        {
+          "name": "Маринованный красный лук",
+          "description": "Тонкие кольца лука в пряном маринаде 0,5 кг",
+          "price": 1950,
+          "photo_file_id": "AgACAgIAAxkDAAIDIGqQfvw5JXeMjNrSHVqFO9CPQmuEAAKNJWsbsEaBSPuPaAqp_MFxAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 18
+        }
+      ]
+    },
+    {
+      "name": "Фирменные сеты",
+      "sort_order": 2,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Сет \"Узбекский\"",
+          "description": "Плов \"Праздничный\" с говядиной 3 кг, салат \"Салат овощной\" 500гр, сет рассчитан на 10 персон",
+          "price": 17550,
+          "photo_file_id": "AgACAgIAAxkDAAIDPGqQfx3F0XHa5hHCSEgNiTnUMFSjAAKpJWsbsEaBSLuwEMs7dsNdAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Сет \"Классический\"",
+          "description": "Плов \"Факирский\" 3 кг, манты с говядиной 30 шт, салат \"Салат овощной\" 400гр",
+          "price": 27495,
+          "photo_file_id": "AgACAgIAAxkDAAIDPWqQfx60nuYGULRoJ6dPgnAfVsehAAKqJWsbsEaBSH1v8eJ1ubQcAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Сет \"Классический MINI\"",
+          "description": "Плов \"Факирский\" 2 кг, манты с говядиной 30 шт, салат \"Салат овощной\" 300гр",
+          "price": 23310,
+          "photo_file_id": "AgACAgIAAxkDAAIDPWqQfx60nuYGULRoJ6dPgnAfVsehAAKqJWsbsEaBSH1v8eJ1ubQcAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Сет \"Гурман\"",
+          "description": "Плов \"Факирский\" 3 кг, манты с говядиной 30 шт, пирог с курицей и картофелем 1 кг, салат \"Салат овощной\" 400гр",
+          "price": 33345,
+          "photo_file_id": "AgACAgIAAxkDAAIDP2qQfyLh7mxNwiVxhuKjCfTAxnXOAAKrJWsbsEaBSF1DJKTu2qhXAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Сет \"Грация\"",
+          "description": "Манты с говядиной 50 шт, салат \"Греческий\" 1кг, Coca-Cola 2л",
+          "price": 22815,
+          "photo_file_id": "AgACAgIAAxkDAAIDQGqQfyPoKw1OKe3JibHp8-aW6lbQAAKsJWsbsEaBSLKjzIdPpHgzAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Сет \"Дамское угощение\"",
+          "description": "Манты с говядиной 50 шт, пирог с курицей и картофелем 1кг, салат \"Нежный\" 1 кг, тарталетки с икрой 10шт, Coca-Cola 2л",
+          "price": 30420,
+          "photo_file_id": "AgACAgIAAxkDAAIDQWqQfyRdl3XJzi3M8RHtI_QG8xC4AAKtJWsbsEaBSBMn5NUjwZkuAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Сет \"Брутал\"",
+          "description": "Плов \"Праздничный\" с говядиной 3кг, Казан кебаб с говядиной 3,5кг, овощная нарезка с сыром 2шт, салат \"Оливье\" 800гр, салат \"Ачучук\" 800гр, лепешка тандырная 6шт",
+          "price": 48555,
+          "photo_file_id": "AgACAgIAAxkDAAIDQmqQfybI0vrpNQSCevs_qZrz5-X-AAKuJWsbsEaBSB5WZovHSqb9AQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Сет \"Восточный\"",
+          "description": "Плов \"Факирский\" 5 кг, манты с говядиной 45шт, пирог с курицей и картофелем 1кг, лепешки 7шт, салат \"Восточный\" 800гр, салат \"Ачучук\" 400гр",
+          "price": 56160,
+          "photo_file_id": "AgACAgIAAxkDAAIDQ2qQfyeLTYTHunuwNmLWfA6XHZWZAAKvJWsbsEaBSHOsLClIxV4DAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        }
+      ]
+    },
+    {
+      "name": "Дополнительное меню",
+      "sort_order": 3,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Пельмешки домашние",
+          "description": "",
+          "price": 890,
+          "photo_file_id": "AgACAgIAAxkDAAIDRGqQfyh9WwaUE7RSI9vZw4c3Q5u8AAKwJWsbsEaBSH6TLBUWGuW1AQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Пицца Маргарита",
+          "description": "",
+          "price": 2590,
+          "photo_file_id": "AgACAgIAAxkDAAIDRWqQfymPcDkDO_bacATEunUUm_4KAAKxJWsbsEaBSDcBd7VD5u3PAQADAgADbQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Пицца Пепперони",
+          "description": "",
+          "price": 2790,
+          "photo_file_id": "AgACAgIAAxkDAAIDRmqQfyrAWsaLkG1_uVFrsbJBQK3lAAKyJWsbsEaBSCgNj7vdvizTAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Пицца Сырная",
+          "description": "",
+          "price": 3290,
+          "photo_file_id": "AgACAgIAAxkDAAIDR2qQfyuN7zS7pCdOgleVzZ-4JkhXAAKzJWsbsEaBSKUcHcP-VM1zAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Наггетсы куриные",
+          "description": "",
+          "price": 1790,
+          "photo_file_id": "AgACAgIAAxkDAAIDSGqQfyzizfG8Tdle0y-0cWERGs80AAK0JWsbsEaBSAVc0VgafGe8AQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Сырные палочки",
+          "description": "",
+          "price": 2190,
+          "photo_file_id": "AgACAgIAAxkDAAIDSWqQfy0Slw1woulBLuijYUCs2b3SAAK1JWsbsEaBSEdD6CUIB-l0AQADAgADbQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Картофель фри",
+          "description": null,
+          "price": 1090,
+          "photo_file_id": "AgACAgIAAxkDAAIDSmqQfy26NMpweWb-pQQwHHAh9PvtAAK2JWsbsEaBSOhLlOZycqHjAQADAgADbQADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        }
+      ]
+    },
+    {
+      "name": "Закуски мясные",
+      "sort_order": 4,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Крылья запеченные",
+          "description": "500 г",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDIWqQfv31tIjpgs-dAAEa9TY7GYpwAwACjiVrG7BGgUgfFSzh7L2-MgEAAwIAA3kAAz0E",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Голень запеченная",
+          "description": "500 г",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDImqQfv-Q7qd1HhHwAleDzg8ZonPzAAKPJWsbsEaBSNemLvlUNPjvAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Мини-рулетики из лаваша с курицей и овощами",
+          "description": "500 г",
+          "price": 3250,
+          "photo_file_id": "AgACAgIAAxkDAAIDI2qQfwINNSXPZVxpmh6Ss3oRKsfgAAKQJWsbsEaBSGJdjjDGdbQ2AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Мясная нарезка",
+          "description": "Говяжий язык, казы, копченая куриная грудка",
+          "price": 6500,
+          "photo_file_id": "AgACAgIAAxkDAAIDJGqQfwNIfHQQ_CoN3PbnRSqa81wXAAKRJWsbsEaBSAXZ0eOHpkGjAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Куриные наггетсы",
+          "description": "10-12 шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDJWqQfwMFSb-Tb_HB2yLTi43FBEx9AAKSJWsbsEaBSDKwKwbNB5F1AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "name": "Закуски рыбные",
+      "sort_order": 5,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Брускетты с семгой",
+          "description": "10шт",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDJmqQfwQBKCSCJfWdAmV7PXoRBSNHAAKTJWsbsEaBSKRwdpxuSfdiAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Рыбное филе в кляре",
+          "description": "судак, минтай, 500г",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDJ2qQfwd5pWZUiEvXBIpIyUUENMLcAAKUJWsbsEaBSMBVAqG_CsKVAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Горбуша гриль",
+          "description": "500г",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDKGqQfwjnpLR9R65i-AqU-7j5o4TyAAKVJWsbsEaBSLG3xs-xBQN8AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Сельдь по-русски",
+          "description": "500г",
+          "price": 3250,
+          "photo_file_id": "AgACAgIAAxkDAAIDKWqQfwmpwM1kE3AazBPzTl5fYuvtAAKWJWsbsEaBSJpkbbp9Zv_vAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Тарталетки с икрой \"Стольная\"",
+          "description": "10шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDKmqQfwr5oAssNgbVmA_GjED3ruqJAAKXJWsbsEaBSIXv8VevZ3dCAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Рыбная нарезка",
+          "description": "Семга, масляная рыба, 500г",
+          "price": 6500,
+          "photo_file_id": "AgACAgIAAxkDAAIDK2qQfwvnJbg3jYDaFN2WkhTmr8f9AAKYJWsbsEaBSHSuKqWOcWDiAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Рулетики с рыбой и сливочным сыром",
+          "description": "10шт",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDLGqQfwuNGeYruRvdckVFWPeCKRFkAAKZJWsbsEaBSPpuqMZgdogJAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Тарталетки с салатом",
+          "description": "10шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDLWqQfw5FV1MJThmC_3QhAnlBBNp0AAKaJWsbsEaBSKSHJ29rdY_CAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        }
+      ]
+    },
+    {
+      "name": "Закуски овощные и холодные",
+      "sort_order": 6,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Шампиньоны запеченные",
+          "description": "10шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDLmqQfw96Ja-1uSmwBawZn3kQfV5YAAKbJWsbsEaBSCvkGLY5I_4IAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Рулеты из баклажанов",
+          "description": "10шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDL2qQfxDOjgpwwBk12niyGwvICO3VAAKcJWsbsEaBSN5A8szCjoh_AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Рулеты из кабачков",
+          "description": "10шт",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDMGqQfxCXjrseYyKNQ1A1_2lHMiH-AAKdJWsbsEaBSNBsS1SH2xTYAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Овощная нарезка",
+          "description": "500г",
+          "price": 1950,
+          "photo_file_id": "AgACAgIAAxkDAAIDMWqQfxECFfwDgXiTD1od8y5oRgEKAAKeJWsbsEaBSEgelOmd0k9xAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Ассорти солений \"Бабушкин погребок\"",
+          "description": "огурцы, помидоры, капуста, мини-кукуруза, оливки, маслины 500г",
+          "price": 3900,
+          "photo_file_id": "AgACAgIAAxkDAAIDMmqQfxIwmx1HW4XZYkd8UkxcxAmiAAKfJWsbsEaBSI2S63x42x9iAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Грибы с лучком",
+          "description": "300г",
+          "price": 4550,
+          "photo_file_id": "AgACAgIAAxkDAAIDM2qQfxRhO4BSfqATEkiErQ82TdYSAAKgJWsbsEaBSBxQ1OY3cldNAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Сырное ассорти",
+          "description": "несколько видов сыра, орехи, виноград, 400г",
+          "price": 6500,
+          "photo_file_id": "AgACAgIAAxkDAAIDNGqQfxSXD2Y26fxa90ntHoIOwCvcAAKhJWsbsEaBSNbh6808yHJTAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Фруктовая тарелка",
+          "description": "сезонные фрукты и ягоды, 500г",
+          "price": 6500,
+          "photo_file_id": "AgACAgIAAxkDAAIDNWqQfxUuh-zK5D5xRsgHzzx3X0McAAKiJWsbsEaBSIN4Rj32ESOqAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        }
+      ]
+    },
+    {
+      "name": "Соусы",
+      "sort_order": 7,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Чесночный сливочный",
+          "description": "ароматный соус для мясных и овощных блюд",
+          "price": 650,
+          "photo_file_id": "AgACAgIAAxkDAAIDNmqQfxf8vc-q8FgOv2LYtXsUm30dAAKjJWsbsEaBSBTFim6feCQPAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Острый томатный",
+          "description": "идеально к пиву и шашлыкам",
+          "price": 650,
+          "photo_file_id": "AgACAgIAAxkDAAIDN2qQfxgnpBhQL8c6hCdyhCaBwlLfAAKkJWsbsEaBSOucqoMCxGYcAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Томатный красный",
+          "description": "для горячих блюд и закусок",
+          "price": 650,
+          "photo_file_id": "AgACAgIAAxkDAAIDOGqQfxl5HMGUfumjKi2xLfy-xMiSAAKlJWsbsEaBSJSkjYWsGB65AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Кисло-сладкий",
+          "description": "к мясу и овощам",
+          "price": 780,
+          "photo_file_id": "AgACAgIAAxkDAAIDOWqQfxr5Zc0JqnO389qbEF-iiFmMAAKmJWsbsEaBSLrTZDYrvDbJAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Соевый соус",
+          "description": "огурцы, помидоры, капуста, кукуруза, 500г",
+          "price": 650,
+          "photo_file_id": "AgACAgIAAxkDAAIDOmqQfxqmm_AP9ejKI7Lxqz_vBjYZAAKnJWsbsEaBSC2oJ4mik-KrAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Фирменный зеленый соус",
+          "description": "300г",
+          "price": 780,
+          "photo_file_id": "AgACAgIAAxkDAAIDO2qQfxvWzXc0qYYgpPJP0SifFf2CAAKoJWsbsEaBSKdm8u6D9edYAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        }
+      ]
+    },
+    {
+      "name": "Напитки",
+      "sort_order": 8,
+      "is_active": true,
+      "products": [
+        {
+          "name": "Компот из сухофруктов 1 л.",
+          "description": "Домашний компот из натуральных сухофруктов",
+          "price": 1100,
+          "photo_file_id": null,
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Морс из ягод 1 л.",
+          "description": "Домашний морс из различных ягод",
+          "price": 1100,
+          "photo_file_id": null,
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Coca Cola 0,5 л",
+          "description": "Газированный напиток, 0,5 л",
+          "price": 700,
+          "photo_file_id": null,
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Coca Cola 1 л",
+          "description": "Газированный напиток, 1 л",
+          "price": 1200,
+          "photo_file_id": null,
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Fanta 0,5 л",
+          "description": "Газированный напиток, 0,5 л",
+          "price": 700,
+          "photo_file_id": "AgACAgIAAxkDAAIDU2qQf3XVVVBxodyZt9OPxCItVaJMAAK5JWsbsEaBSBDmKa4qlMVGAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Fanta 1 л",
+          "description": "Газированный напиток, 1 л",
+          "price": 1200,
+          "photo_file_id": "AgACAgIAAxkDAAIDU2qQf3XVVVBxodyZt9OPxCItVaJMAAK5JWsbsEaBSBDmKa4qlMVGAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        },
+        {
+          "name": "Sprite 0,5 л",
+          "description": "Газированный напиток, 0,5 л",
+          "price": 700,
+          "photo_file_id": "AgACAgIAAxkDAAIDUWqQf3NwsM9iVI4n-fpHFoQXSBu3AAK3JWsbsEaBSIt1iSmHdNJxAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 6
+        },
+        {
+          "name": "Sprite 1 л",
+          "description": "Газированный напиток, 1 л",
+          "price": 1200,
+          "photo_file_id": "AgACAgIAAxkDAAIDUWqQf3NwsM9iVI4n-fpHFoQXSBu3AAK3JWsbsEaBSIt1iSmHdNJxAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 7
+        },
+        {
+          "name": "Pepsi 0,5 л",
+          "description": "Газированный напиток, 0,5 л",
+          "price": 700,
+          "photo_file_id": "AgACAgIAAxkDAAIDUmqQf3SnfONKwHOqbj9mNOR9dnuIAAK4JWsbsEaBSO3Cp6RCSj2sAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 8
+        },
+        {
+          "name": "Pepsi 1 л",
+          "description": "Газированный напиток, 1 л",
+          "price": 1200,
+          "photo_file_id": "AgACAgIAAxkDAAIDUmqQf3SnfONKwHOqbj9mNOR9dnuIAAK4JWsbsEaBSO3Cp6RCSj2sAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 9
+        },
+        {
+          "name": "Сок RICH 1 л. (гранат)",
+          "description": "Вкус: Гранат",
+          "price": 1400,
+          "photo_file_id": "AgACAgIAAxkDAAIDVGqQf3Zwp57J3CF_v15kl0maYtmxAAK6JWsbsEaBSE8TFRBBvEfCAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 10
+        },
+        {
+          "name": "Сок RICH 1 л. (апельсин-манго)",
+          "description": "Вкус: Манго",
+          "price": 1400,
+          "photo_file_id": "AgACAgIAAxkDAAIDVWqQf3cnJBpp5wwq-oH_2mRhalzFAAK7JWsbsEaBSMeOdGJkggqnAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 11
+        },
+        {
+          "name": "Сок RICH 1 л. (вишня)",
+          "description": "Вкус: Вишня",
+          "price": 1400,
+          "photo_file_id": "AgACAgIAAxkDAAIDV2qQf3nBWFDVRbQebbAyEJnX_rX8AAK9JWsbsEaBSGD5hePqmiuXAQADAgADeAADPQQ",
+          "is_available": true,
+          "sort_order": 12
+        },
+        {
+          "name": "Сок RICH 1 л. (ананас)",
+          "description": "Вкус: Ананас",
+          "price": 1400,
+          "photo_file_id": "AgACAgIAAxkDAAIDVmqQf3i-UecXPGo8YKteagWRe_dyAAK8JWsbsEaBSN8nu6F2blYHAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 13
+        }
+      ]
+    },
+    {
+      "name": "Новогодние сеты",
+      "sort_order": 9,
+      "is_active": false,
+      "products": [
+        {
+          "name": "Сет Mini на 10-12 персон",
+          "description": "Горячее - \"Ханский плов\" - 3 кг. Салаты - Восточный - 500 гр., Бенто шуба - 500 гр. Закуски - Рулетики из баклажана - 300 гр., Сырные шарики - 300 гр. 🎁Ачучук - 500 гр. 🎁Лепешки фирменные - 12 шт.",
+          "price": 69000,
+          "photo_file_id": "AgACAgIAAxkDAAIC_GqQftnCHzxyVuKxODV_xbc0ARX0AAJfJWsbsEaBSO3J5Murl3hyAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 0
+        },
+        {
+          "name": "Сет Standart на 10-12 персон",
+          "description": "Горячее - \"Ханский плов\" - 3 кг. Салаты - Восточный 500 гр., Бенто шуба 500 гр., Бенто фирменный 500 гр. Закуски - Рыба в кляре 300 гр. Рулетики из баклажана 300 гр., Сырные шарики - 300 гр. 🎁Ачучук - 500 гр. 🎁Лепешки фирменные - 12 шт.",
+          "price": 76000,
+          "photo_file_id": "AgACAgIAAxkDAAIC_WqQfttcEQQnfam9ObDcjJRSavnBAAJhJWsbsEaBSKsnZNIOsRAXAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 1
+        },
+        {
+          "name": "Сет Premium на 10-12 персон",
+          "description": "Горячее - \"Ханский плов\" 3 кг., Манты - 36 шт. Салаты - Восточный 500 гр., Бенто шуба - 500 гр., Бенто фирменный - 500 гр. Бенто оливье - 500 гр. Закуски - Рыба в кляре - 300 гр. Рулетики из баклажана - 300 гр., Сырные шарики - 300 гр., Брусскеты - 300 гр. 🎁Ачучук - 500 гр. 🎁Самса с курицей - 500 гр. 🎁Лепешки фирменные - 12 шт.",
+          "price": 87000,
+          "photo_file_id": "AgACAgIAAxkDAAIC_mqQftsaMKI7QA0L9W6YjSUmdEaxAAJiJWsbsEaBSNDhVkZxWnO0AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 2
+        },
+        {
+          "name": "Сет Mini на 5-6 персон",
+          "description": "Горячее - \"Ханский плов\" - 1.5 кг. Салаты - Восточный - 250 гр., Бенто шуба - 250 гр. Закуски - Рулетики из баклажана - 150 гр., Сырные шарики - 150 гр. 🎁Ачучук - 250 гр. 🎁Лепешки фирменные - 6 шт.",
+          "price": 34500,
+          "photo_file_id": "AgACAgIAAxkDAAIC_GqQftnCHzxyVuKxODV_xbc0ARX0AAJfJWsbsEaBSO3J5Murl3hyAQADAgADdwADPQQ",
+          "is_available": true,
+          "sort_order": 3
+        },
+        {
+          "name": "Сет Standart на 5-6 персон",
+          "description": "Горячее - \"Ханский плов\" - 1.5 кг. Салаты - Восточный 250 гр., Бенто шуба 250 гр., Бенто фирменный 250 гр. Закуски - Рыба в кляре 150 гр. Рулетики из баклажана 150 гр., Сырные шарики - 150 гр. 🎁Ачучук - 250 гр. 🎁Лепешки фирменные - 6 шт.",
+          "price": 38000,
+          "photo_file_id": "AgACAgIAAxkDAAIC_WqQfttcEQQnfam9ObDcjJRSavnBAAJhJWsbsEaBSKsnZNIOsRAXAQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 4
+        },
+        {
+          "name": "Сет Premium на 5-6 персон",
+          "description": "Горячее - \"Ханский плов\" 1.5 кг., Манты - 18 шт. Салаты - Восточный 250 гр., Бенто шуба - 250 гр., Бенто фирменный - 250 гр. Бенто оливье - 250 гр. Закуски - Рыба в кляре - 150 гр. Рулетики из баклажана - 150 гр., Сырные шарики - 150 гр., Брусскеты - 150 гр. 🎁Ачучук - 250 гр. 🎁Самса с курицей - 250 гр. 🎁Лепешки фирменные - 6 шт.",
+          "price": 43500,
+          "photo_file_id": "AgACAgIAAxkDAAIC_mqQftsaMKI7QA0L9W6YjSUmdEaxAAJiJWsbsEaBSNDhVkZxWnO0AQADAgADeQADPQQ",
+          "is_available": true,
+          "sort_order": 5
+        }
+      ]
+    }
+  ]
+}
