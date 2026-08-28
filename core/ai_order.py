@@ -35,7 +35,9 @@ PORTIONS_RE = re.compile(r"(\d+)\s*порци", re.IGNORECASE)
 PACKS_RE = re.compile(r"(\d+)\s*(?:упаков|пакет|шт|штук)", re.IGNORECASE)
 UNITS_RE = re.compile(r"(\d+)\s*(?:порци|шт|штук|порц)", re.IGNORECASE)
 MULT_RE = re.compile(r"[хx×]\s*(\d+)")
-TIME_RE = re.compile(r"(\d{1,2})[.:](\d{2})")
+# «ЧЧ:ММ» (или «ЧЧ.ММ») — с валидными 24-часовыми значениями, чтобы не хватать
+# «31.08» из даты как «31:08»
+TIME_RE = re.compile(r"(?<!\d)((?:[01]?\d|2[0-3]))[.:]([0-5]\d)")
 DATE_RE = re.compile(r"(\d{1,2})[./](\d{1,2})")
 
 
