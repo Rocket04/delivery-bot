@@ -198,3 +198,24 @@ class AiLlmCall(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PaymentEvent(Base):
+    """Идемпотентность Kaspi-платежей (ARCHITECTURE_REVIEW P0, фаза 2).
+
+    Внешний платёжный webhook может прийти повторно (ретраи, дубли) — ловим
+    уникальным ключом (external_id, type) и делаем INSERT ... ON CONFLICT
+    DO NOTHING (через core.payments.record_payment_event): двойного
+    зачисления/обновления не будет.
+    """
+
+    __tablename__ = "payment_events"
+    __table_args__ = (
+        UniqueConstraint("external_id", "type", name="uq_payment_events_ext_type"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    external_id: Mapped[str] = mapped_column(String(64))  # id операции у провайдера
+    type: Mapped[str] = mapped_column(String(32))  # payment.created / payment.captured / ...
+    payload: Mapped[str | None] = mapped_column(Text)  # сырое тело webhook (для разбора)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

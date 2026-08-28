@@ -21,7 +21,17 @@ from sqlalchemy.exc import IntegrityError
 from core.ai_memory import load_history, purge_history, push_history, try_llm_call
 from core.cart import change_quantity
 from core.ordering import create_order
-from data.models import AiChatHistory, AiLlmCall, CartItem, Category, OrderItem, Product, User
+from core.payments import record_payment_event
+from data.models import (
+    AiChatHistory,
+    AiLlmCall,
+    CartItem,
+    Category,
+    OrderItem,
+    PaymentEvent,
+    Product,
+    User,
+)
 from tests.test_ai_assistant import _settings
 
 pytestmark = pytest.mark.pg
@@ -60,10 +70,11 @@ async def test_pg_migrations_up_to_head(pg_engine):
                 text("SELECT tablename FROM pg_tables WHERE schemaname='public'")
             )
         }
-    assert version == "0005", version
+    assert version == "0006", version
     expected = {
         "users", "categories", "products", "cart_items", "orders",
         "order_items", "order_events", "ai_chat_history", "ai_llm_calls",
+        "payment_events",
     }
     assert expected <= tables, expected - tables
 
@@ -165,3 +176,12 @@ async def test_pg_llm_quota(pg_session):
     await pg_session.commit()
     calls = (await pg_session.scalars(select(AiLlmCall))).all()
     assert len(calls) == 4  # 1 старая + 1 (u1) + 2 (u2); отклонённый не записан
+
+
+async def test_pg_payment_idempotency(pg_session):
+    """Уникальный ключ (external_id, type) — повторный webhook отбрасывается на PG."""
+    assert await record_payment_event(pg_session, "ext-1", "payment.created", '{"id":"op-1"}') is True
+    assert await record_payment_event(pg_session, "ext-1", "payment.created", '{"id":"op-1"}') is False
+    assert await record_payment_event(pg_session, "ext-1", "payment.captured") is True
+    rows = (await pg_session.scalars(select(PaymentEvent))).all()
+    assert len(rows) == 2

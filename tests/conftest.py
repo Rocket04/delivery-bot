@@ -32,7 +32,7 @@ async def db_session():
 
 PG_TEST_TABLES = (
     "users, categories, products, cart_items, orders, order_items, "
-    "order_events, ai_chat_history, ai_llm_calls"
+    "order_events, ai_chat_history, ai_llm_calls, payment_events"
 )
 
 
