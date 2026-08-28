@@ -157,8 +157,8 @@ async def on_freetext(message: Message, session: AsyncSession, state: FSMContext
     answer = await answer_freetext(session, user_id, message.text, provider, settings, history=history)
     await message.answer(answer.text)
     if answer.action in ("llm", "order_status", "fallback"):
-        push_history(session, user_id, "user", message.text, settings.ai_history_ttl_hours)
-        push_history(session, user_id, "assistant", answer.text, settings.ai_history_ttl_hours)
+        await push_history(session, user_id, "user", message.text, settings.ai_history_ttl_hours)
+        await push_history(session, user_id, "assistant", answer.text, settings.ai_history_ttl_hours)
     await session.commit()  # история + учёт LLM-вызовов (try_llm_call)
     if answer.action == "operator":
         try:

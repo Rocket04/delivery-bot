@@ -129,18 +129,19 @@ async def test_phone_extraction():
 async def test_time_extraction_plain():
     s = _settings()
     now = datetime(2026, 8, 28, 12, 0, tzinfo=ZoneInfo(TZ))
-    # «18:30» без даты → ближайший доступный день (лид 24 ч → 30.08)
-    t = parse_time_freetext("на 18:30", s, 25_000)
+    # «18:30» без даты → ближайший доступный день (лид 24 ч → 30.08); фиксированное now
+    t = parse_time_freetext("на 18:30", s, 25_000, now=now)
     assert t is not None and t.hour == 18 and t.minute == 30
 
 
 async def test_time_extraction_tomorrow():
     s = _settings()
-    # «послезавтра» вместо «завтра»: тест не зависит от времени суток
-    # (вечером «завтра 14:00» — меньше 24 ч лида, parse вернёт None)
-    t = parse_time_freetext("послезавтра 14:00", s, 25_000)
+    now = datetime(2026, 8, 28, 12, 0, tzinfo=ZoneInfo(TZ))
+    # фиксированное now: тест не зависит от времени суток (вечером «завтра 14:00»
+    # — меньше 24 ч лида, parse вернул бы None)
+    t = parse_time_freetext("послезавтра 14:00", s, 25_000, now=now)
     assert t is not None
-    assert (t.date() - datetime.now(ZoneInfo(TZ)).date()).days == 2
+    assert (t.date() - now.date()).days == 2
 
 
 async def test_time_rejects_night():
