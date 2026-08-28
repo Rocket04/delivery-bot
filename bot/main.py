@@ -14,7 +14,8 @@ from bot.middlewares.errors import ErrorHandlingMiddleware
 from bot.middlewares.throttling import ThrottlingMiddleware
 from bot.middlewares.user_registration import UserRegistrationMiddleware
 from config.settings import get_settings
-from data.db import dispose_db, init_db
+from core.ai_memory import purge_history, purge_llm_calls
+from data.db import dispose_db, get_session_maker, init_db
 
 COMMANDS = [
     BotCommand(command="start", description="Главное меню"),
@@ -30,6 +31,22 @@ async def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     init_db(settings.db_url)
+
+    # TTL-чистка персистентной памяти ИИ-ассистента при старте (ARCHITECTURE_REVIEW P1)
+    try:
+        maker = get_session_maker()
+        async with maker() as session:
+            removed_history = await purge_history(session, settings.ai_history_ttl_hours)
+            removed_calls = await purge_llm_calls(session, settings.ai_history_ttl_hours)
+            await session.commit()
+        if removed_history or removed_calls:
+            logging.info(
+                "TTL-чистка ai-памяти: история %d, учёт вызовов %d",
+                removed_history,
+                removed_calls,
+            )
+    except Exception:
+        logging.exception("Не удалось выполнить TTL-чистку ai-памяти")
 
     bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()

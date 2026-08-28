@@ -166,12 +166,15 @@ def parse_phone_from_text(text: str) -> str | None:
     return m.group(0).strip() if m else None
 
 
-def parse_time_freetext(text: str, settings: Settings, total: int) -> datetime | None:
+def parse_time_freetext(
+    text: str, settings: Settings, total: int, now: datetime | None = None
+) -> datetime | None:
     """Пытается вытащить время доставки из свободного текста.
 
     Поддержка: «завтра 18:30», «послезавтра 18:30», «30.08 18:30», просто «18:30»
     (тогда — на ближайший доступный день). Возвращает осознанное локальное
     время, если оно проходит validate_schedule (лид + окно 08:00–23:00).
+    now — для тестов (не зависит от времени суток); по умолчанию сейчас.
     """
     m = TIME_RE.search(text)
     if not m:
@@ -179,7 +182,7 @@ def parse_time_freetext(text: str, settings: Settings, total: int) -> datetime |
     hour, minute = int(m.group(1)), int(m.group(2))
     lower = _norm(text)
     day_offset = 2 if "послезавтр" in lower else (1 if "завтра" in lower else 0)
-    now = datetime.now(ZoneInfo(settings.app_tz))
+    now = now or datetime.now(ZoneInfo(settings.app_tz))
     if day_offset:
         day = (now + timedelta(days=day_offset)).date()
     else:
