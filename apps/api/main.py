@@ -3,19 +3,21 @@
 По ARCHITECTURE_REVIEW (шаг 1 фазы 2): те же core-сервисы, эндпоинты
 GET /menu, POST /orders, GET /orders/{id}. Long polling бота не трогаем.
 
+Из подготовки уже реализовано: initData-авторизация (HMAC-SHA256 от бот-токена,
+apps/api/security.py) — заказчик определяется проверенной подписью, а не телом.
+
 Ограничения подготовки (осознанно вне этого скелета):
-- авторизация initData (HMAC-SHA256 бот-токена) — следующий шаг;
 - деплой не выполняется: нужен домен + HTTPS на ВМ (владелец);
 - Kaspi Pay / webhook — отдельные экспы (идемпотентность payment_events, P0).
 
-Секреты в коде отсутствуют; DB_URL — из .env (как у бота).
+Секреты в коде отсутствуют; DB_URL и BOT_TOKEN — из .env (как у бота).
 """
 
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +28,7 @@ from apps.api.schemas import (
     OrderItemOut,
     OrderOut,
 )
+from apps.api.security import verify_init_data
 from config.settings import get_settings
 from core.cart import change_quantity
 from core.catalog import (
@@ -55,6 +58,20 @@ app = FastAPI(title="Food Plov API", version="0.1.0", lifespan=lifespan)
 async def get_session() -> AsyncSession:
     async with get_session_maker()() as session:
         yield session
+
+
+def require_init_data(x_telegram_init_data: str | None = Header(default=None)) -> dict:
+    """Авторизация Mini App (фаза 2): подпись initData из заголовка.
+
+    Заказчиком считается user из проверенного initData (tg-идентификация),
+    а не произвольное число из тела запроса.
+    """
+    if x_telegram_init_data is None:
+        raise HTTPException(status_code=401, detail="Нет заголовка X-Telegram-Init-Data")
+    user = verify_init_data(x_telegram_init_data, get_settings().bot_token)
+    if user is None:
+        raise HTTPException(status_code=401, detail="initData не прошёл проверку подписи")
+    return user
 
 
 @app.get("/health")
@@ -104,11 +121,16 @@ async def _order_items_out(session: AsyncSession, order_id: int) -> list[OrderIt
 
 @app.post("/orders", response_model=OrderOut, status_code=201)
 async def place_order(
-    payload: OrderCreateIn, session: AsyncSession = Depends(get_session)
+    payload: OrderCreateIn,
+    session: AsyncSession = Depends(get_session),
+    auth: dict = Depends(require_init_data),
 ) -> OrderOut:
-    """Создаёт заказ: позиции в корзину → create_order (те же бизнес-правила)."""
+    """Создаёт заказ: позиции в корзину → create_order (те же бизнес-правила).
+
+    Кто заказчик — из проверенного initData (auth["id"] = telegram_id).
+    """
     settings = get_settings()
-    user = await upsert_user(session, payload.telegram_id)
+    user = await upsert_user(session, auth["id"])
     for item in payload.items:
         if await get_product(session, item.product_id) is None:
             raise HTTPException(status_code=404, detail=f"Товар {item.product_id} не найден")

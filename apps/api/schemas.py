@@ -29,7 +29,8 @@ class OrderItemIn(BaseModel):
 
 
 class OrderCreateIn(BaseModel):
-    telegram_id: int  # позже — из initData Mini App (HMAC-SHA256 от бот-токена)
+    # telegram_id НЕ передаётся телом: кто заказчик — определяет проверенная
+    # подпись initData (см. apps/api/security.py, заголовок X-Telegram-Init-Data)
     contact_name: str = "Клиент"
     contact_phone: str
     delivery_method: str = "own"  # own | yandex | pickup (DeliveryMethod)
