@@ -10,7 +10,7 @@ from bot.texts import RU, fmt_price
 from bot.utils import edit_or_answer
 from config.settings import get_settings
 from core.cart import CartView, change_quantity, clear_cart, get_cart_view
-from core.catalog import get_product
+from core.catalog import get_product, portion_line_total, portion_qty_label
 
 router = Router(name="cart")
 
@@ -18,10 +18,13 @@ ITEM_RE = re.compile(r"^cart:item:(\d+)$")
 QTY_RE = re.compile(r"^cart:(inc|dec):(\d+)$")
 
 
-def _cart_text(view: CartView, min_order: int) -> str:
+def _cart_text(view: CartView, min_order: int, portion_grams: int = 300) -> str:
     parts = [RU["cart_title"]]
     for i, row in enumerate(view.rows, 1):
-        line = RU["cart_row"].format(name=row.name, qty=row.quantity, sum=fmt_price(row.price * row.quantity))
+        line = RU["cart_row"].format(
+            label=portion_qty_label(row.name, row.quantity, portion_grams),
+            sum=fmt_price(portion_line_total(row.price, row.quantity, row.grams, portion_grams)),
+        )
         if not row.available:
             line += RU["cart_unavailable_note"]
         parts.append(f"{i}. {line}")
@@ -41,7 +44,10 @@ async def _show_cart(callback: CallbackQuery, session: AsyncSession) -> None:
         await edit_or_answer(callback.message, RU["cart_empty"], cart_empty_kb())
         return
     kb = cart_kb(view.rows)
-    await edit_or_answer(callback.message, _cart_text(view, get_settings().min_order_amount), kb)
+    settings = get_settings()
+    await edit_or_answer(
+        callback.message, _cart_text(view, settings.min_order_amount, settings.portion_grams), kb
+    )
 
 
 @router.callback_query(F.data.in_({"main:cart", "cart:open"}))

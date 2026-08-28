@@ -127,7 +127,12 @@ class Order(Base):
 
 
 class OrderItem(Base):
-    """Позиция заказа со снапшотом названия и цены на момент оформления."""
+    """Позиция заказа со снапшотом названия и цены на момент оформления.
+
+    Для весовых товаров quantity хранится в ПОРЦИЯХ, а price — цена упаковки
+    (например «(3 кг)»); product_grams — вес упаковки (None — штучный товар).
+    Сумма позиции: portion_line_total(price, quantity, product_grams).
+    """
 
     __tablename__ = "order_items"
 
@@ -135,8 +140,9 @@ class OrderItem(Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
     product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"))
     name: Mapped[str] = mapped_column(String(160))  # снапшот
-    price: Mapped[int] = mapped_column(Integer)  # снапшот, тенге
-    quantity: Mapped[int] = mapped_column(Integer)
+    price: Mapped[int] = mapped_column(Integer)  # снапшот: цена упаковки/штуки, тенге
+    quantity: Mapped[int] = mapped_column(Integer)  # снапшот: порции/штуки
+    product_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)  # снапшот веса упаковки
 
     order: Mapped[Order] = relationship(back_populates="items")
 

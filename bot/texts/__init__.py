@@ -41,14 +41,15 @@ RU = {
     "product_unavailable": "Это блюдо сейчас недоступно.",
     "product_card": (
         "🍛 <b>{name}</b>\n"
-        "{desc}\n\n"
+        "{desc}{pack}\n\n"
         "<b>{price}</b>\n"
         "{in_cart}"
     ),
-    "in_cart": "В корзине: {qty} шт · сумма {sum}",
+    "product_pack_hint": "🍽 {grams} кг — {portions} порций · ≈ {per_portion}/порция\n",
+    "in_cart": "В корзине: {label} · {sum}",
     "cart_title": "🛒 <b>Корзина</b>",
     "cart_empty": "🛒 Корзина пуста.\n\nЗагляни в меню — там много вкусного!",
-    "cart_row": "{name} ×{qty} — {sum}",
+    "cart_row": "{label} — {sum}",
     "cart_unavailable_note": " ⚠️ <i>нет в наличии</i>",
     "cart_total": "\n\n<b>Итого: {total}</b>",
     "cart_min_warn": "\n⚠️ До мин. заказа ({min}) осталось: <b>{diff}</b>",

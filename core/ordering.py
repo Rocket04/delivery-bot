@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
 from core.cart import change_quantity, clear_cart, get_cart_view
+from core.catalog import portion_line_total, portion_qty_label, product_grams
 from core.constants import (
     DeliveryMethod,
     ORDER_TRANSITIONS,
@@ -128,8 +129,12 @@ def format_money(n: int) -> str:
     return f"{n:,}".replace(",", " ") + " ₸"
 
 
-def order_summary_text(order: Order, items: list[OrderItem]) -> str:
-    """Человекочитаемая сводка заказа — для клиента и группы операторов."""
+def order_summary_text(order: Order, items: list[OrderItem], portion_grams: int = 300) -> str:
+    """Человекочитаемая сводка заказа — для клиента и группы операторов.
+
+    Для весовых товаров количество — порции с весом: «15 порций (4,5 кг)»,
+    сумма считается по весу (см. portion_line_total).
+    """
     lines = [
         f"👤 {order.contact_name}",
         f"📞 {order.contact_phone}",
@@ -143,7 +148,8 @@ def order_summary_text(order: Order, items: list[OrderItem]) -> str:
     lines.append("")
     lines.append("————————————")
     lines.extend(
-        f"{item.name} ×{item.quantity} — {format_money(item.price * item.quantity)}"
+        f"{item.name} {portion_qty_label(item.name, item.quantity, portion_grams)} — "
+        f"{format_money(portion_line_total(item.price, item.quantity, item.product_grams, portion_grams))}"
         for item in sorted(items, key=lambda it: it.id)
     )
     if order.delivery_price:
@@ -216,7 +222,14 @@ async def create_order(
 
     for row in view.rows:
         session.add(
-            OrderItem(order_id=order.id, product_id=row.product_id, name=row.name, price=row.price, quantity=row.quantity)
+            OrderItem(
+                order_id=order.id,
+                product_id=row.product_id,
+                name=row.name,
+                price=row.price,
+                quantity=row.quantity,
+                product_grams=row.grams,
+            )
         )
     session.add(OrderEvent(order_id=order.id, from_status=None, to_status=order.status, actor="user"))
     await clear_cart(session, user_id)

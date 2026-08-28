@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     dish_deposit_amount: int = 10_000  # залог за восточную посуду (возвратный), тенге
     app_tz: str = "Asia/Almaty"  # часовой пояс бизнеса
 
+    # Порция весового блюда в граммах (пловы и т.п.: 1 порция = 300 г, 10 порций = 3 кг)
+    portion_grams: int = 300  # env: PORTION_GRAMS
+
     # --- Окно приготовления (время ДОСТАВКИ должно попадать в него — ночью не готовим) ---
     delivery_start_hour: int = 8  # env: DELIVERY_START_HOUR — с какого часа принимаем время
     delivery_end_hour: int = 23  # env: DELIVERY_END_HOUR — до какого часа (включительно)

@@ -63,12 +63,21 @@ async def test_match_by_distinctive_token(db_session):
     assert found[0].quantity == 15
 
 
-async def test_match_kg_converts_to_units(db_session):
+async def test_match_kg_converts_to_portions(db_session):
     await _seed_menu(db_session)
+    # 6 кг факирского = 20 порций по 300 г (а не 2 упаковки × 3 кг)
     found, _ = await match_menu_items(db_session, "Хорошо, давайте 6 кг факирский")
     assert len(found) == 1
     assert "Факирский" in found[0].product.name
-    assert found[0].quantity == 2  # 6 кг / 3 кг
+    assert found[0].quantity == 20
+
+
+async def test_match_kg_float(db_session):
+    await _seed_menu(db_session)
+    found, _ = await match_menu_items(db_session, "4,5 кг праздничного")
+    assert len(found) == 1
+    assert "Праздничный" in found[0].product.name
+    assert found[0].quantity == 15  # 4,5 кг / 300 г
 
 
 async def test_match_multiple_items(db_session):
@@ -94,9 +103,10 @@ async def test_generic_word_not_match(db_session):
 
 async def test_match_case_and_yo(db_session):
     await _seed_menu(db_session)
+    # ×2 для весового товара = 2 упаковки × 10 порций = 20 порций
     found, _ = await match_menu_items(db_session, "ПЛОВ ФАКИРСКИЙ Ё-МОЁ х2")
     assert len(found) == 1
-    assert found[0].quantity == 2
+    assert found[0].quantity == 20
 
 
 async def test_ambiguous_skipped(db_session):
@@ -137,3 +147,40 @@ async def test_time_rejects_night():
     assert parse_time_freetext("03:00", s, 25_000) is None
     # без времени — отказ
     assert parse_time_freetext("привезите как-нибудь", s, 25_000) is None
+
+
+# --- Порции (1 порция = 300 г, 10 порций = 3 кг) ---
+
+def test_portion_line_total_package_equality():
+    from core.catalog import portion_line_total
+    # 10 порций × 300 г из упаковки 3 кг = ровно цена упаковки
+    assert portion_line_total(15_300, 10, 3000) == 15_300
+    assert portion_line_total(17_550, 15, 3000) == 26_325  # 15 порций = 4,5 кг
+    # упаковка 4 кг, 13 порций (3,9 кг): ceil(26900 × 13×300 / 4000)
+    assert portion_line_total(26_900, 13, 4000) == 26_228
+    # штучный товар — без конверсии
+    assert portion_line_total(19_500, 2, None) == 39_000
+
+
+def test_portion_helpers():
+    from core.catalog import portion_qty_label, portions_in_package, product_grams
+    assert product_grams("Плов Праздничный (3 кг)") == 3000
+    assert product_grams("Плов по-татарски (4,5 кг)") == 4500
+    assert product_grams("Манты (50 шт)") is None
+    assert portions_in_package("Плов Ханский (3 кг)") == 10
+    assert portions_in_package("Казан Кебаб (4 кг)") == 13
+    assert portion_qty_label("Плов Праздничный (3 кг)", 15) == "15 порций (4,5 кг)"
+    assert portion_qty_label("Манты (50 шт)", 3) == "×3"
+
+
+async def test_cart_total_uses_portions(db_session):
+    from core.cart import change_quantity, get_cart_view
+    await _seed_menu(db_session)
+    # 15 порций праздничного (4,5 кг) — сумма по весу
+    await change_quantity(db_session, 1, 2, 15)  # Плов Праздничный
+    view = await get_cart_view(db_session, 1)
+    assert view.total == 26_325
+    # обычный кнопочный заказ: +1 = 1 порция (300 г), а не упаковка
+    await change_quantity(db_session, 1, 1, 1)  # Плов Факирский
+    view = await get_cart_view(db_session, 1)
+    assert view.total == 26_325 + 1_530

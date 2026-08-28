@@ -31,6 +31,7 @@ from core.ai_order import (
 )
 from core.assistant import answer_freetext
 from core.cart import change_quantity, clear_cart, get_cart_view
+from core.catalog import portion_line_total, portion_qty_label
 from core.constants import DeliveryMethod
 from core.ordering import (
     DELIVERY_METHOD_LABELS,
@@ -102,9 +103,11 @@ def _terminal_kb() -> InlineKeyboardMarkup:
     )
 
 
-def _cart_lines(view) -> str:
+def _cart_lines(view, portion_grams: int = 300) -> str:
     rows = "\n".join(
-        f"{r.name} ×{r.quantity} — {format_money(r.price * r.quantity)}" for r in view.rows
+        f"{r.name} {portion_qty_label(r.name, r.quantity, portion_grams)} — "
+        f"{format_money(portion_line_total(r.price, r.quantity, r.grams, portion_grams))}"
+        for r in view.rows
     )
     return rows or "—"
 
@@ -143,7 +146,7 @@ async def on_freetext(message: Message, session: AsyncSession, state: FSMContext
         await message.answer(
             RU["ai_order_start"].format(
                 items="\n".join(mi.display for mi in matched),
-                rows=_cart_lines(view),
+                rows=_cart_lines(view, settings.portion_grams),
                 total=format_money(view.total),
             )
         )

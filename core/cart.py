@@ -1,10 +1,16 @@
-"""Сервисы корзины. Не зависят от Telegram. Корзина в БД — переживает рестарты."""
+"""Сервисы корзины. Не зависят от Telegram. Корзина в БД — переживает рестарты.
+
+Единицы: для весовых товаров (в названии «(N кг)») количество считается в
+ПОРЦИЯХ (по умолчанию 300 г, см. portion_grams), для штучных — в штуках/упаковках.
+Суммы весовых позиций считаются пропорционально весу (порция × цена упаковки / вес).
+"""
 
 from dataclasses import dataclass
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.catalog import portion_line_total, product_grams
 from data.models import CartItem, Product
 
 MAX_QTY = 99
@@ -17,6 +23,7 @@ class CartRow:
     price: int
     quantity: int
     available: bool
+    grams: int | None = None  # вес упаковки (None — штучный товар)
 
 
 @dataclass
@@ -41,7 +48,7 @@ async def cart_qty(session: AsyncSession, user_id: int, product_id: int) -> int:
 
 async def change_quantity(session: AsyncSession, user_id: int, product_id: int, delta: int) -> int:
     """Увеличивает/уменьшает количество на delta. При 0 — позиция удаляется.
-    Возвращает новое количество позиции."""
+    Возвращает новое количество позиции (в порциях/штуках)."""
     item = await _cart_item(session, user_id, product_id)
     if item is None:
         if delta <= 0:
@@ -63,7 +70,9 @@ async def change_quantity(session: AsyncSession, user_id: int, product_id: int, 
     return new_qty
 
 
-async def get_cart_view(session: AsyncSession, user_id: int) -> CartView:
+async def get_cart_view(
+    session: AsyncSession, user_id: int, portion_grams: int = 300
+) -> CartView:
     stmt = (
         select(CartItem.quantity, Product)
         .join(Product, CartItem.product_id == Product.id)
@@ -74,11 +83,12 @@ async def get_cart_view(session: AsyncSession, user_id: int) -> CartView:
     total = 0
     unavailable_total = 0
     for quantity, product in (await session.execute(stmt)).all():
-        rows.append(CartRow(product.id, product.name, product.price, quantity, product.is_available))
+        grams = product_grams(product.name)
+        rows.append(CartRow(product.id, product.name, product.price, quantity, product.is_available, grams))
         if product.is_available:
-            total += product.price * quantity
+            total += portion_line_total(product.price, quantity, grams, portion_grams)
         else:
-            unavailable_total += product.price * quantity
+            unavailable_total += portion_line_total(product.price, quantity, grams, portion_grams)
     return CartView(rows=rows, total=total, unavailable_total=unavailable_total)
 
 

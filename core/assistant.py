@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
+from core.catalog import portion_qty_label, portions_in_package, product_grams
 from core.ordering import ORDER_STATUS_LABELS, format_money
 from data.models import Category, Order, Product
 from integrations.llm import LLMError, LLMProvider
@@ -61,7 +62,12 @@ async def collect_context(session: AsyncSession, user_id: int, settings: Setting
         .order_by(Category.sort_order, Category.id, Product.sort_order, Product.id)
     )
     for category, product in (await session.execute(stmt)).all():
-        lines.append(f"- {category.name}: {product.name} — {format_money(product.price)}")
+        grams = product_grams(product.name)
+        if grams:
+            extra = f" (упаковка {grams / 1000:g} кг = {portions_in_package(product.name, settings.portion_grams)} порций по {settings.portion_grams} г)"
+        else:
+            extra = ""
+        lines.append(f"- {category.name}: {product.name}{extra} — {format_money(product.price)}")
     menu_block = "\n".join(lines)
     if len(menu_block) > MAX_MENU_CHARS:
         menu_block = menu_block[:MAX_MENU_CHARS] + "\n…"
@@ -70,6 +76,7 @@ async def collect_context(session: AsyncSession, user_id: int, settings: Setting
         f"{menu_block or '- меню пусто'}\n\n"
         "БИЗНЕС-ПРАВИЛА:\n"
         f"- минимальный заказ: {format_money(settings.min_order_amount)};\n"
+        f"- порция весовых блюд — {settings.portion_grams} г (10 порций = 3 кг): «15 порций» = {(15 * settings.portion_grams) / 1000:g} кг;\n"
         f"- предоплата 50% всегда (Kaspi); крупные заказы (от {format_money(settings.large_order_threshold)}) — минимум за {settings.large_order_lead_hours} часа, обычные — минимум за сутки;\n"
         f"- готовим с {settings.delivery_start_hour:02d}:00 до {settings.delivery_end_hour:02d}:00, ночью не готовим;\n"
         "- доставка: своя/Яндекс (курьера вызывает клиент)/самовывоз (Рабочий переулок, 2а-1)."

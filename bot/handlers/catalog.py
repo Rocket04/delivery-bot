@@ -9,12 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.keyboards.catalog import categories_kb, product_card_kb, products_kb
 from bot.texts import RU, fmt_price
 from bot.utils import edit_or_answer
+from config.settings import get_settings
 from core.cart import cart_qty, change_quantity
 from core.catalog import (
     get_category,
     get_product,
     list_active_categories,
     list_available_products,
+    portion_line_total,
+    portion_qty_label,
+    portions_in_package,
+    product_grams,
     product_weight_label,
 )
 from core.users import get_user_by_tg_id
@@ -33,13 +38,29 @@ async def db_user_id(session: AsyncSession, tg_id: int) -> int:
 
 
 def _product_card_text(product: Product, qty: int) -> str:
+    settings = get_settings()
+    portion = settings.portion_grams
     if qty:
-        in_cart = RU["in_cart"].format(qty=qty, sum=fmt_price(product.price * qty))
+        in_cart = RU["in_cart"].format(
+            label=portion_qty_label(product.name, qty, portion),
+            sum=fmt_price(portion_line_total(product.price, qty, product_grams(product.name), portion)),
+        )
     else:
-        in_cart = "В корзине: 0 шт"
+        in_cart = "В корзине: 0"
+    # подсказка «3 кг = 10 порций · 1 755 ₸/порция» для весовых товаров
+    grams = product_grams(product.name)
+    pack = ""
+    if grams:
+        per_portion = round(product.price * portion / grams)
+        pack = RU["product_pack_hint"].format(
+            grams=f"{grams / 1000:g}".replace(".", ","),
+            portions=portions_in_package(product.name, portion),
+            per_portion=fmt_price(per_portion),
+        )
     return RU["product_card"].format(
         name=product.name,
         desc=product.description or "",
+        pack=pack,
         price=fmt_price(product.price),
         in_cart=in_cart,
     )

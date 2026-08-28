@@ -20,12 +20,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
+from core.catalog import (
+    portion_line_total,
+    portion_qty_label,
+    portions_in_package,
+    product_grams,
+)
 from core.ordering import earliest_allowed, validate_schedule
 from data.models import Category, Product
 
 PHONE_RE = re.compile(r"(?:\+?7|8)\s?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}")
-WEIGHT_RE = re.compile(r"\((\d+)\s*кг\)")
-KG_RE = re.compile(r"(\d+)\s*кг")
+KG_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*кг")
+PORTIONS_RE = re.compile(r"(\d+)\s*порци", re.IGNORECASE)
+PACKS_RE = re.compile(r"(\d+)\s*(?:упаков|пакет|шт|штук)", re.IGNORECASE)
 UNITS_RE = re.compile(r"(\d+)\s*(?:порци|шт|штук|порц)", re.IGNORECASE)
 MULT_RE = re.compile(r"[хx×]\s*(\d+)")
 TIME_RE = re.compile(r"(\d{1,2})[.:](\d{2})")
@@ -41,7 +48,8 @@ class MatchedItem:
 
     @property
     def display(self) -> str:
-        return f"{self.product.name} ×{self.quantity}"
+        label = portion_qty_label(self.product.name, self.quantity)
+        return f"{self.product.name} {label}"
 
 
 def _norm(s: str) -> str:
@@ -54,24 +62,41 @@ def _base_name(name: str) -> str:
     return _norm(base)
 
 
-def _weight_kg(name: str) -> int | None:
-    m = WEIGHT_RE.search(name)
-    return int(m.group(1)) if m else None
-
-
 def _product_tokens(base: str) -> list[str]:
-    return [t for t in base.split() if len(t) >= 4]
+    """Стемминг-токены названия: «праздничный» → «праздничн», чтобы матчились
+    любые падежные формы («праздничного», «праздничном»)."""
+    return [_stem(t) for t in base.split() if len(t) >= 4]
 
 
-def _quantity_in(text: str, product: Product) -> int:
-    """Количество: «6 кг» для позиции «(3 кг)» → 2; «15 порций» → 15; «×2» → 2; иначе 1."""
+def _stem(token: str) -> str:
+    """Короткая основа слова: у токенов длиннее 6 букв отрезаем 2 последних."""
+    return token if len(token) <= 6 else token[:-2]
+
+
+def _quantity_in(text: str, product: Product, portion_grams: int = 300) -> int:
+    """Количество в порциях (весовые) или штуках (штучные).
+
+    Весовой товар («Плов Праздничный (3 кг)», 1 порция = 300 г):
+    «15 порций» → 15 (4,5 кг); «4,5 кг» → 15; «6 кг» → 20; «2 упаковки/шт» → 20; «×2» → 20.
+    Штучный («Манты (50 шт)»): «50 шт» → 50, «×2» → 2.
+    """
     lower = text.lower()
-    weight = _weight_kg(product.name)
-    if weight:
+    grams = product_grams(product.name)
+    if grams:
         m = KG_RE.search(lower)
         if m:
-            kg = int(m.group(1))
-            return max(1, round(kg / weight))
+            kg = float(m.group(1).replace(",", "."))
+            return max(1, round(kg * 1000 / portion_grams))
+        m = PORTIONS_RE.search(lower)
+        if m:
+            return max(1, int(m.group(1)))
+        m = PACKS_RE.search(lower)
+        if m:
+            return max(1, int(m.group(1)) * portions_in_package(product.name, portion_grams))
+        m = MULT_RE.search(lower)
+        if m:
+            return max(1, int(m.group(1)) * portions_in_package(product.name, portion_grams))
+        return 1
     for pat in (UNITS_RE, MULT_RE):
         m = pat.search(lower)
         if m:
@@ -188,7 +213,12 @@ def build_order_body(view, data: dict) -> str:
     lines = [l for l in lines if l]
     lines.append("")
     lines.append("————————————")
-    lines.extend(f"{r.name} ×{r.quantity} — {format_money(r.price * r.quantity)}" for r in view.rows)
+    portion = 300
+    lines.extend(
+        f"{r.name} {portion_qty_label(r.name, r.quantity, portion)} — "
+        f"{format_money(portion_line_total(r.price, r.quantity, r.grams, portion))}"
+        for r in view.rows
+    )
     if view.unavailable_total:
         lines.append(f"⚠️ Без наличия: {format_money(view.unavailable_total)}")
     lines.append("————————————")

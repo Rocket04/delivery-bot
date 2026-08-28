@@ -28,6 +28,7 @@ from bot.texts import RU, fmt_price
 from bot.utils import edit_or_answer
 from config.settings import get_settings
 from core.cart import get_cart_view
+from core.catalog import portion_line_total, portion_qty_label
 from core.constants import DeliveryMethod
 from core.ordering import (
     DELIVERY_METHOD_LABELS,
@@ -350,8 +351,11 @@ async def _show_summary(message: Message, state: FSMContext, session: AsyncSessi
         lines.append("⚠️ Яндекс-курьера вызываешь сам, оплата по тарифам Яндекса")
     lines.append("")
     lines.append("————————————")
+    portion = get_settings().portion_grams
     lines.extend(
-        f"{row.name} ×{row.quantity} — {fmt_price(row.price * row.quantity)}" for row in view.rows
+        f"{row.name} {portion_qty_label(row.name, row.quantity, portion)} — "
+        f"{fmt_price(portion_line_total(row.price, row.quantity, row.grams, portion))}"
+        for row in view.rows
     )
     lines.append("————————————")
     lines.append(f"<b>Сумма: {fmt_price(view.total)}</b>")
