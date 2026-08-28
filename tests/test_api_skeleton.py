@@ -1,0 +1,140 @@
+"""Тесты подготовительного FastAPI-скелета Mini App (фаза 2, exp/miniapp-prep).
+
+Проверяются контракты API поверх core: меню (порции/вес как в боте),
+создание заказа с бизнес-правилами (мин. сумма, лид), чтение заказа.
+Telegram и сеть не используются (httpx ASGITransport).
+"""
+
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
+
+from apps.api.main import app, get_session
+from core.catalog import portion_line_total
+from data.models import Base, Category, Product, User
+
+TZ = "Asia/Almaty"
+
+
+@pytest_asyncio.fixture
+async def api_env():
+    """In-memory SQLite + FastAPI без lifespan и сети; возвращает (client, maker)."""
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:", poolclass=StaticPool)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def _session():
+        async with maker() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = _session
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client, maker
+    app.dependency_overrides.clear()
+    await engine.dispose()
+
+
+def _schedule() -> datetime:
+    d = datetime.now(ZoneInfo(TZ)).date() + timedelta(days=2)
+    return datetime(d.year, d.month, d.day, 12, 0, tzinfo=ZoneInfo(TZ))
+
+
+async def _seed(maker) -> tuple[int, int]:
+    """Пользователь + категория + весовой плов (3 кг) и манты."""
+    async with maker() as session:
+        session.add(User(tg_id=123456, first_name="Веб"))
+        cat = Category(name="Пловы", sort_order=0, is_active=True)
+        session.add(cat)
+        await session.flush()
+        plov = Product(category_id=cat.id, name="Плов Факирский (3 кг)", price=15300, is_available=True, sort_order=0)
+        manti = Product(category_id=cat.id, name="Манты (50 шт)", price=19500, is_available=True, sort_order=1)
+        session.add_all([plov, manti])
+        await session.commit()
+        return plov.id, manti.id
+
+
+def _order_payload(telegram_id: int = 123456, **kw) -> dict:
+    payload = dict(
+        telegram_id=telegram_id,
+        contact_name="Веб-клиент",
+        contact_phone="+77000000000",
+        delivery_method="own",
+        address="ул. Веб, 1",
+        scheduled_for=_schedule().isoformat(),
+        items=[{"product_id": 1, "quantity": 2}, {"product_id": 2, "quantity": 1}],
+    )
+    payload.update(kw)
+    return payload
+
+
+async def test_api_health(api_env):
+    client, _ = api_env
+    r = await client.get("/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+
+
+async def test_api_menu_shape(api_env):
+    client, maker = api_env
+    plov, manti = await _seed(maker)
+    r = await client.get("/menu")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1 and data[0]["name"] == "Пловы"
+    by_name = {p["name"]: p for p in data[0]["products"]}
+    assert set(by_name) == {"Плов Факирский (3 кг)", "Манты (50 шт)"}
+    # весовой товар: порции упаковки (как в боте); граммовка в названии — суффикс не дублируется
+    assert by_name["Плов Факирский (3 кг)"]["portions"] == 10
+    assert by_name["Плов Факирский (3 кг)"]["price"] == 15300
+    # штучный: без порций
+    assert by_name["Манты (50 шт)"]["portions"] is None
+
+
+async def test_api_create_and_get_order(api_env):
+    client, maker = api_env
+    plov, manti = await _seed(maker)
+    r = await client.post("/orders", json=_order_payload())
+    assert r.status_code == 201, r.text
+    order = r.json()
+    assert order["number"].split("-")[-1] == str(order["id"])  # номер: дата доставки-id
+    assert order["status"] == "created"
+    total = portion_line_total(15300, 2, 3000) + 19500  # 2 порции плова + манты
+    assert order["total"] == total
+    assert order["prepay_amount"] == total * 50 // 100
+    assert len(order["items"]) == 2
+    plov_item = next(i for i in order["items"] if "Плов" in i["name"])
+    assert plov_item["quantity"] == 2 and plov_item["product_grams"] == 3000
+    # чтение заказа
+    r2 = await client.get(f"/orders/{order['id']}")
+    assert r2.status_code == 200
+    assert r2.json()["number"] == order["number"]
+
+
+async def test_api_order_minimum_amount(api_env):
+    client, maker = api_env
+    plov, manti = await _seed(maker)
+    # одна манты (19 500 ₸) < минимальный заказ 20 000 ₸
+    payload = _order_payload(items=[{"product_id": 2, "quantity": 1}])
+    r = await client.post("/orders", json=payload)
+    assert r.status_code == 400
+    assert "Минимальный заказ" in r.json()["detail"]
+
+
+async def test_api_order_unknown_product(api_env):
+    client, maker = api_env
+    await _seed(maker)
+    r = await client.post("/orders", json=_order_payload(items=[{"product_id": 999, "quantity": 1}]))
+    assert r.status_code == 404
+    assert "не найден" in r.json()["detail"]
+
+
+async def test_api_order_not_found(api_env):
+    client, _ = api_env
+    r = await client.get("/orders/999999")
+    assert r.status_code == 404
