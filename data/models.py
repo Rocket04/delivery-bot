@@ -8,6 +8,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     MetaData,
     String,
@@ -161,3 +162,39 @@ class OrderEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     order: Mapped[Order] = relationship(back_populates="events")
+
+
+class AiChatHistory(Base):
+    """Персистентная история FAQ-диалогов ИИ-ассистента (вместо in-memory deque).
+
+    Чистится по TTL (AI_HISTORY_TTL_HOURS): лениво при записи и при старте бота.
+    """
+
+    __tablename__ = "ai_chat_history"
+    __table_args__ = (
+        # чтение последних реплик и TTL-чистка идут по (user_id, created_at)
+        Index("ix_ai_chat_history_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    role: Mapped[str] = mapped_column(String(16))  # user | assistant
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AiLlmCall(Base):
+    """Учёт LLM-вызовов для пер-юзер лимита (скользящее окно, AI_LLM_WINDOW_MINUTES).
+
+    Строка создаётся перед каждым реальным обращением к провайдеру LLM;
+    лимит (AI_LLM_LIMIT_PER_HOUR) считается как число строк за окно.
+    """
+
+    __tablename__ = "ai_llm_calls"
+    __table_args__ = (
+        Index("ix_ai_llm_calls_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

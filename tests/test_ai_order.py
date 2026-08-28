@@ -136,9 +136,11 @@ async def test_time_extraction_plain():
 
 async def test_time_extraction_tomorrow():
     s = _settings()
-    t = parse_time_freetext("завтра 14:00", s, 25_000)
+    # «послезавтра» вместо «завтра»: тест не зависит от времени суток
+    # (вечером «завтра 14:00» — меньше 24 ч лида, parse вернёт None)
+    t = parse_time_freetext("послезавтра 14:00", s, 25_000)
     assert t is not None
-    assert (t - datetime.now(ZoneInfo(TZ))).days in (1, 2)
+    assert (t.date() - datetime.now(ZoneInfo(TZ)).date()).days == 2
 
 
 async def test_time_rejects_night():
