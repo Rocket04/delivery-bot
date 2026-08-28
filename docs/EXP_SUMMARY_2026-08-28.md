@@ -1,0 +1,29 @@
+# EXP-сводка — эксперименты 2026-08-28 (для ревью владельца)
+
+Всё в ветках `exp/*`, **в main не мержилось** — решение за владельцем.
+Рекомендуемый порядок мержа: `exp/ai-memory` → `exp/pg-tests` (уже содержит ai-memory) → `exp/miniapp-prep`.
+
+| Ветка | Что делает | Тесты | Коммитов от main |
+|---|---|---|---|
+| `exp/ai-memory` | Персистентная история FAQ (таблицы `ai_chat_history`/`ai_llm_calls`, миграция **0005**) + лимит LLM 30/час (скользящее окно 60 мин, ответ `quota` с телефоном оператора); TTL-чистка (при записи + при старте бота); e2e-покрытие истории | **79 зелёных** | 2 |
+| `exp/pg-tests` | PG-интеграционные тесты (`-m pg`): миграции 0001→0005 на PostgreSQL, полный флоу заказа, unique/CHECK-констрейнты, каскады FK, TTL и лимит на timestamptz; `scripts/run_tests.ps1` | **86 зелёных** (79 + 7 PG) | 6 |
+| `exp/miniapp-prep` | FastAPI-скелет Mini App (фаза 2): `GET /menu`, `POST /orders`, `GET /orders/{id}`; initData-авторизация (HMAC-SHA256 от `BOT_TOKEN`, заголовок `X-Telegram-Init-Data`); **без деплоя** — нужен домен+HTTPS | **74 зелёных** (10 api; +1 временный time-flaky — исправлен в ai-memory) | 2 |
+
+## Как деплоить (когда будет «ок» владельца)
+
+```bash
+# на ВМ: переключить на ветку и запустить update.sh (применит миграции 0005)
+cd /opt/delivery-bot && git fetch origin && git checkout exp/ai-memory && bash scripts/update.sh
+# откат ИИ (если что): LLM_PROVIDER=mock в .env + restart — команда /aioff в мост-боте
+```
+
+## Заметки
+
+- **Баг-фикс**: первоначально `push_history` в `bot/handlers/ai.py` вызывался без `await` —
+  история молча не сохранялась. Исправлено, закрыто e2e-тестами (`tests/test_ai_memory_e2e.py`).
+- **Flaky устранён**: `parse_time_freetext(now=...)` — тесты времени больше не зависят от времени суток
+  (раньше «на 18:30» падал после 18:30 из-за 24-часового лида).
+- **AI-конфиг прод-готов**: `AI_LLM_LIMIT_PER_HOUR=30`, `AI_HISTORY_TTL_HOURS=24`,
+  `AI_HISTORY_LIMIT=8` — env-параметры в `config/settings.py` (без них работают дефолты).
+- Миграция **0005** применится на проде командой `alembic upgrade head` при старте бота (как 0001–0004).
+- Секретов в ветках нет: токены/ключи живут только в `.env` (локально и на ВМ).
