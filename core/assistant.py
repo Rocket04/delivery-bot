@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import Settings
+from core.ai_memory import try_llm_call
 from core.catalog import portion_qty_label, portions_in_package, product_grams
 from core.ordering import ORDER_STATUS_LABELS, format_money
 from data.models import Category, Order, Product
@@ -124,6 +125,14 @@ def _fallback_text() -> str:
     )
 
 
+def _quota_text() -> str:
+    """Лимит LLM-вызовов исчерпан (ARCHITECTURE_REVIEW P1) — человек в контуре."""
+    return (
+        "🙂 Многовато вопросов подряд — давай передохнём пару минут. "
+        f"Если срочно, оператор на связи: <b>{OPERATOR_PHONE}</b>"
+    )
+
+
 def _escalation_text(kw: str) -> str:
     return (
         f"Понял, вопрос серьёзный ({kw}). Сразу передаю живому оператору — "
@@ -153,6 +162,12 @@ async def answer_freetext(
     if ORDER_STATUS_RE.search(text):
         brief = await last_order_brief(session, user_id)
         return AssistantAnswer(action="order_status", text=brief)
+
+    # 2b. Лимит LLM-вызовов на пользователя (скользящее окно) — человек в контуре
+    if not await try_llm_call(
+        session, user_id, settings.llm_limit_per_hour, settings.llm_window_minutes
+    ):
+        return AssistantAnswer(action="quota", text=_quota_text())
 
     # 3. LLM
     context = await collect_context(session, user_id, settings)

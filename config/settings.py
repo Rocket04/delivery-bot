@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     llm_base_url: str = ""  # env: LLM_BASE_URL — пусто = дефолт провайдера (deepseek / opencode-go)
     llm_max_tokens: int = 240  # env: LLM_MAX_TOKENS — лимит ответа (экономия + защита)
 
+    # Лимит LLM-вызовов на пользователя (ARCHITECTURE_REVIEW P1): скользящее окно
+    llm_limit_per_hour: int = 30  # env: AI_LLM_LIMIT_PER_HOUR — максимум вызовов за окно
+    llm_window_minutes: int = 60  # env: AI_LLM_WINDOW_MINUTES — длина окна лимита
+
+    # Персистентная история FAQ (ARCHITECTURE_REVIEW P1): таблица БД + TTL
+    ai_history_limit: int = 8  # env: AI_HISTORY_LIMIT — реплик диалога, уходящих в LLM
+    ai_history_ttl_hours: int = 24  # env: AI_HISTORY_TTL_HOURS — сколько живёт история
+
     @property
     def admin_id_list(self) -> list[int]:
         return [int(x.strip()) for x in self.admin_ids.split(",") if x.strip()]

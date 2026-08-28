@@ -10,7 +10,6 @@
 """
 
 import logging
-from collections import deque
 
 from aiogram import F, Router
 from aiogram.filters import StateFilter
@@ -23,6 +22,7 @@ from bot.handlers.catalog import db_user_id
 from bot.notify import notify_ai_escalation, send_order_to_operators
 from bot.texts import RU
 from config.settings import get_settings
+from core.ai_memory import load_history, push_history
 from core.ai_order import (
     build_order_body,
     match_menu_items,
@@ -47,9 +47,8 @@ router = Router(name="ai")
 
 log = logging.getLogger(__name__)
 
-# Память FAQ-диалога (in-memory; переживает сообщения, но не рестарт — для эксперимента)
-_HISTORY: dict[int, deque[tuple[str, str]]] = {}
-HISTORY_LIMIT = 8
+# История FAQ-диалога — персистентная (таблица ai_chat_history + TTL, см. core/ai_memory);
+# лимит реплик, уходящих в LLM, — из настроек (AI_HISTORY_LIMIT).
 
 
 class AIOrderState(StatesGroup):
@@ -57,11 +56,6 @@ class AIOrderState(StatesGroup):
     address = State()
     method = State()
     time = State()
-
-
-def _push_history(tg_id: int, user_msg: str, bot_msg: str) -> None:
-    _HISTORY.setdefault(tg_id, deque(maxlen=HISTORY_LIMIT)).append(("user", user_msg))
-    _HISTORY[tg_id].append(("assistant", bot_msg))
 
 
 def _method_kb() -> InlineKeyboardMarkup:
@@ -158,11 +152,14 @@ async def on_freetext(message: Message, session: AsyncSession, state: FSMContext
     provider = get_provider(
         settings.llm_provider, settings.llm_api_key, settings.llm_model, settings.llm_base_url
     )
-    history = list(_HISTORY.get(message.from_user.id, []))[-HISTORY_LIMIT:]
+    # История диалога — из БД (персистентная, TTL-чистка при записи)
+    history = await load_history(session, user_id, settings.ai_history_limit)
     answer = await answer_freetext(session, user_id, message.text, provider, settings, history=history)
     await message.answer(answer.text)
     if answer.action in ("llm", "order_status", "fallback"):
-        _push_history(message.from_user.id, message.text, answer.text)
+        push_history(session, user_id, "user", message.text, settings.ai_history_ttl_hours)
+        push_history(session, user_id, "assistant", answer.text, settings.ai_history_ttl_hours)
+    await session.commit()  # история + учёт LLM-вызовов (try_llm_call)
     if answer.action == "operator":
         try:
             await notify_ai_escalation(message.bot, message.from_user, message.text)
