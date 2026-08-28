@@ -13,6 +13,7 @@ COPY bot/ bot/
 COPY core/ core/
 COPY data/ data/
 COPY config/ config/
+COPY integrations/ integrations/
 COPY scripts/ scripts/
 COPY alembic.ini ./
 
