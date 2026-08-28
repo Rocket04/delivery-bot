@@ -213,3 +213,27 @@ async def test_api_order_stale_init_data_rejected(api_env):
     stale = make_init_data(TEST_TOKEN, 123456, auth_date=int(time.time()) - 90_000)
     r = await client.post("/orders", json=_order_payload(), headers={"X-Telegram-Init-Data": stale})
     assert r.status_code == 401
+
+
+# --- Kaspi webhook (идемпотентность, P0) ---
+
+
+async def test_api_kaspi_webhook_idempotent(api_env):
+    client, _ = api_env
+    body = {"external_id": "op-1", "type": "payment.created", "payload": '{"op":1}'}
+    r1 = await client.post("/webhooks/kaspi", json=body)
+    assert r1.status_code == 200
+    assert r1.json()["status"] == "recorded"
+    # повторный webhook (ретрай/дубль) — отбрасывается
+    r2 = await client.post("/webhooks/kaspi", json=body)
+    assert r2.status_code == 409
+    assert "Дубликат" in r2.json()["detail"]
+
+
+async def test_api_kaspi_webhook_different_type(api_env):
+    client, _ = api_env
+    # created и captured — разные события; повтор captured — 409
+    r1 = await client.post("/webhooks/kaspi", json={"external_id": "op-1", "type": "payment.created"})
+    r2 = await client.post("/webhooks/kaspi", json={"external_id": "op-1", "type": "payment.captured"})
+    r3 = await client.post("/webhooks/kaspi", json={"external_id": "op-1", "type": "payment.captured"})
+    assert (r1.status_code, r2.status_code, r3.status_code) == (200, 200, 409)

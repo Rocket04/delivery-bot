@@ -56,3 +56,15 @@ class OrderOut(BaseModel):
     delivery_method: str | None = None
     scheduled_for: datetime | None = None
     items: list[OrderItemOut]
+
+
+class KaspiWebhookIn(BaseModel):
+    """Сырой каркас события платёжного webhook (идемпотентность уже работает).
+
+    Точный формат Kaspi Merchant API появится при подключении sandbox;
+    сейчас важны ключ идемпотентности (external_id, type) и сырой payload.
+    """
+
+    external_id: str
+    type: str  # payment.created | payment.captured | ...
+    payload: str | None = None

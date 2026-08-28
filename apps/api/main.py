@@ -1,14 +1,17 @@
 """Mini App (фаза 2) — подготовительный FastAPI-скелет поверх core, без Telegram.
 
 По ARCHITECTURE_REVIEW (шаг 1 фазы 2): те же core-сервисы, эндпоинты
-GET /menu, POST /orders, GET /orders/{id}. Long polling бота не трогаем.
+GET /menu, POST /orders, GET /orders/{id}, POST /webhooks/kaspi.
+Long polling бота не трогаем.
 
-Из подготовки уже реализовано: initData-авторизация (HMAC-SHA256 от бот-токена,
-apps/api/security.py) — заказчик определяется проверенной подписью, а не телом.
+Из подготовки уже реализовано:
+- initData-авторизация (HMAC-SHA256 от бот-токена, apps/api/security.py) —
+  заказчик определяется проверенной подписью, а не телом;
+- идемпотентность платёжного webhook (payment_events, core/payments).
 
 Ограничения подготовки (осознанно вне этого скелета):
 - деплой не выполняется: нужен домен + HTTPS на ВМ (владелец);
-- Kaspi Pay / webhook — отдельные экспы (идемпотентность payment_events, P0).
+- точный формат Kaspi Merchant API — при подключении sandbox (каркас уже стоит).
 
 Секреты в коде отсутствуют; DB_URL и BOT_TOKEN — из .env (как у бота).
 """
@@ -22,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.schemas import (
+    KaspiWebhookIn,
     MenuCategoryOut,
     MenuProductOut,
     OrderCreateIn,
@@ -40,6 +44,7 @@ from core.catalog import (
     product_weight_label,
 )
 from core.ordering import OrderError, create_order, get_order
+from core.payments import record_payment_event
 from core.users import upsert_user
 from data.db import dispose_db, get_session_maker, init_db
 from data.models import OrderItem
@@ -180,3 +185,17 @@ async def order_detail(order_id: int, session: AsyncSession = Depends(get_sessio
         scheduled_for=order.scheduled_for,
         items=items,
     )
+
+
+@app.post("/webhooks/kaspi", status_code=200)
+async def kaspi_webhook(ev: KaspiWebhookIn, session: AsyncSession = Depends(get_session)) -> dict:
+    """Каркас платёжного webhook (идемпотентность, P0).
+
+    Первое событие записывается; повторный webhook с тем же
+    (external_id, type) → 409 (начисления/обновления не дублируются).
+    Точная схема Kaspi Merchant API подключится на этапе sandbox —
+    сейчас защищена от двойного применения бизнес-логики.
+    """
+    if await record_payment_event(session, ev.external_id, ev.type, ev.payload):
+        return {"status": "recorded"}
+    raise HTTPException(status_code=409, detail="Дубликат события")
