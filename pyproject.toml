@@ -32,3 +32,6 @@ include = ["bot*", "core*", "data*", "config*", "integrations*"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "-p no:cacheprovider"
+markers = [
+    "pg: интеграционные тесты на PostgreSQL (нужен PG_TEST_URL, см. tests/test_pg_integration.py)",
+]
